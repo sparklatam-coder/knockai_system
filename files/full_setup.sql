@@ -206,13 +206,13 @@ INSERT INTO clients (id, name, region, contact_name, contact_phone, contact_emai
 VALUES (
   '00000000-0001-0001-0001-000000000001',
   '이지투스치과',
-  '경기도 양주시',
+  '서울시 강남구 역삼동',
   '김원장',
   '010-1234-5678',
   'easytooth@demo.com',
   'premium',
   '2026-02-01',
-  '양주 이지치과. 임플란트/교정 전문. 야간진료 운영.',
+  '강남 역삼역 3번출구. 임플란트/교정 전문. 야간진료 운영.',
   (SELECT id FROM auth.users WHERE email = 'easytooth@demo.com')
 );
 
@@ -259,7 +259,7 @@ INSERT INTO sub_nodes (client_id, node_key, label, sort_order, is_done) VALUES
   ('00000000-0001-0001-0001-000000000001', 'cs_analytics',   '키워드 순위 추적',                              2, true);
 
 INSERT INTO activity_logs (client_id, node_key, action_type, content, visible_to_client, created_at) VALUES
-  ('00000000-0001-0001-0001-000000000001', 'awareness',      'task_complete',  '네이버 플레이스 ''양주 임플란트'' 키워드 1페이지 달성',            true,  now() - interval '1 day'),
+  ('00000000-0001-0001-0001-000000000001', 'awareness',      'task_complete',  '네이버 플레이스 ''강남 임플란트'' 키워드 1페이지 달성',            true,  now() - interval '1 day'),
   ('00000000-0001-0001-0001-000000000001', 'awareness',      'note',           '블로그 포스팅 10건 발행 완료. 네이버 검색 노출 확인',            true,  now() - interval '2 days'),
   ('00000000-0001-0001-0001-000000000001', 'awareness',      'status_change',  '인지 확대 노드 → 완료 처리',                                 true,  now() - interval '3 days'),
   ('00000000-0001-0001-0001-000000000001', 'lead_capture',   'task_complete',  '스마트콜 번호 설정 완료 (02-1234-5678)',                       true,  now() - interval '3 days'),
@@ -277,7 +277,7 @@ INSERT INTO activity_logs (client_id, node_key, action_type, content, visible_to
   ('00000000-0001-0001-0001-000000000001', 'cs_community',   'note',           '소개 이벤트 기획 검토 중 (소개 시 스케일링 무료 쿠폰)',             false, now() - interval '14 days'),
   ('00000000-0001-0001-0001-000000000001', 'cs_analytics',   'task_complete',  '월간 리포트 자동화 설정 완료 — 매월 1일 이메일 발송',              true,  now() - interval '15 days'),
   ('00000000-0001-0001-0001-000000000001', 'cs_analytics',   'file_upload',    '2월 유입/전환 리포트 발송 — 네이버 유입 320건, 예약전환 42건 (13.1%)', true, now() - interval '16 days'),
-  ('00000000-0001-0001-0001-000000000001', 'cs_analytics',   'note',           '키워드 순위 추적 시작 — ''양주 임플란트'' 3위, ''양주 치과'' 5위',    true,  now() - interval '17 days');
+  ('00000000-0001-0001-0001-000000000001', 'cs_analytics',   'note',           '키워드 순위 추적 시작 — ''강남 임플란트'' 3위, ''역삼 치과'' 5위',    true,  now() - interval '17 days');
 
 
 -- ---- hardtoothhospital (Entry) ----
@@ -326,3 +326,70 @@ INSERT INTO activity_logs (client_id, node_key, action_type, content, visible_to
   ('00000000-0002-0002-0002-000000000002', 'awareness',    'note',           '블로그 포스팅 주제 리스트 작성 중',               false, now() - interval '5 days'),
   ('00000000-0002-0002-0002-000000000002', 'cs_analytics', 'task_complete',  '키워드 순위 추적 설정 — ''수원 치과'' 현재 12위',   true,  now() - interval '3 days'),
   ('00000000-0002-0002-0002-000000000002', 'cs_analytics', 'note',           '첫 월간 리포트 다음 주 발송 예정',               true,  now() - interval '1 day');
+
+-- ============================================
+-- 6. STORAGE (이미지 업로드)
+-- ============================================
+
+-- Storage 버킷 생성
+INSERT INTO storage.buckets (id, name, public)
+VALUES ('activity-images', 'activity-images', true)
+ON CONFLICT (id) DO NOTHING;
+
+-- activity_logs에 image_urls 컬럼 추가
+ALTER TABLE activity_logs
+ADD COLUMN IF NOT EXISTS image_urls text[] DEFAULT '{}';
+
+-- RLS: admin만 업로드
+DO $$ BEGIN
+  CREATE POLICY "Admin can upload activity images"
+  ON storage.objects FOR INSERT TO authenticated
+  WITH CHECK (
+    bucket_id = 'activity-images'
+    AND (auth.jwt() -> 'user_metadata' ->> 'role') = 'admin'
+  );
+EXCEPTION WHEN duplicate_object THEN NULL;
+END $$;
+
+-- RLS: 누구나 조회
+DO $$ BEGIN
+  CREATE POLICY "Anyone can view activity images"
+  ON storage.objects FOR SELECT
+  USING (bucket_id = 'activity-images');
+EXCEPTION WHEN duplicate_object THEN NULL;
+END $$;
+
+-- ============================================
+-- 7. LOG TYPE (memo / work)
+-- ============================================
+
+-- log_type 컬럼 추가
+ALTER TABLE activity_logs
+ADD COLUMN IF NOT EXISTS log_type text DEFAULT 'memo';
+
+-- 기존 데이터 마이그레이션
+UPDATE activity_logs
+SET log_type = 'work', visible_to_client = true
+WHERE action_type IN ('task_complete', 'status_change', 'file_upload');
+
+UPDATE activity_logs
+SET log_type = CASE
+  WHEN visible_to_client = true THEN 'work'
+  ELSE 'memo'
+END
+WHERE action_type = 'note';
+
+-- CHECK 제약 추가
+DO $$ BEGIN
+  ALTER TABLE activity_logs
+  ADD CONSTRAINT activity_logs_log_type_check CHECK (log_type IN ('memo', 'work'));
+EXCEPTION WHEN duplicate_object THEN NULL;
+END $$;
+
+-- RLS 정책 업데이트: 기존 client 정책 교체
+DROP POLICY IF EXISTS "Client read visible logs" ON activity_logs;
+
+CREATE POLICY "Client read visible logs" ON activity_logs FOR SELECT USING (
+  client_id IN (SELECT id FROM clients WHERE auth_user_id = auth.uid())
+  AND visible_to_client = true
+);

@@ -64,8 +64,8 @@ export function AdminClientsView() {
             placeholder="병원명, 지역, 담당자"
             style={{
               width: "100%", minHeight: 44, paddingLeft: 40, paddingRight: 14,
-              background: "rgba(255,255,255,0.04)", border: "1px solid var(--border)",
-              borderRadius: 12, color: "var(--text)", fontSize: 14,
+              background: "var(--overlay-3)", border: "1px solid var(--border)",
+              borderRadius: "var(--radius-input)", color: "var(--text)", fontSize: 14,
             }}
           />
         </div>
@@ -80,8 +80,8 @@ export function AdminClientsView() {
               style={{
                 padding: "8px 16px", borderRadius: 100, fontSize: 13, fontWeight: 600,
                 cursor: "pointer", transition: "all 0.18s",
-                background: selectedTier === t.value ? "rgba(79,156,255,0.18)" : "rgba(255,255,255,0.04)",
-                border: selectedTier === t.value ? "1px solid rgba(79,156,255,0.4)" : "1px solid var(--border)",
+                background: selectedTier === t.value ? "var(--accent-bg)" : "var(--overlay-3)",
+                border: selectedTier === t.value ? "1px solid var(--accent-hover)" : "1px solid var(--border)",
                 color: selectedTier === t.value ? "var(--gP)" : "var(--tsub)",
               }}
             >
@@ -104,7 +104,7 @@ export function AdminClientsView() {
       {/* ── Count ── */}
       <p style={{ fontSize: 13, color: "var(--tdim)" }}>
         {loading ? "불러오는 중…" : `총 ${filtered.length}개 고객`}
-        {error && <span style={{ color: "#ef4444", marginLeft: 8 }}>{error}</span>}
+        {error && <span style={{ color: "var(--error)", marginLeft: 8 }}>{error}</span>}
       </p>
 
       {/* ── Client grid ── */}
@@ -138,7 +138,7 @@ export function AdminClientsView() {
 
               <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
                 <FormField label="병원명 *">
-                  <input required value={form.name} onChange={field("name")} placeholder="노크치과" style={inputStyle} />
+                  <input required value={form.name} onChange={field("name")} placeholder="노크병원" style={inputStyle} />
                 </FormField>
                 <FormField label="지역">
                   <input value={form.region} onChange={field("region")} placeholder="서울 강남" style={inputStyle} />
@@ -174,7 +174,7 @@ export function AdminClientsView() {
               </FormField>
 
               {formMsg && (
-                <p style={{ fontSize: 13, color: formMsg.startsWith("✓") ? "var(--gG)" : "#ef4444" }}>
+                <p style={{ fontSize: 13, color: formMsg.startsWith("✓") ? "var(--gG)" : "var(--error)" }}>
                   {formMsg}
                 </p>
               )}
@@ -209,7 +209,7 @@ function FormField({ label, children }: { label: string; children: React.ReactNo
 const inputStyle: React.CSSProperties = {
   width: "100%", minHeight: 40,
   padding: "9px 12px",
-  background: "rgba(255,255,255,0.03)",
+  background: "var(--overlay-2)",
   border: "1px solid var(--border)",
   borderRadius: 10, color: "var(--text)", fontSize: 13,
 };

@@ -1,0 +1,201 @@
+/* ══════════════════════════════════════════════════════════════
+   KNOCK Design System — Single Source of Truth
+   모든 페이지에서 이 파일을 import하면 브랜드 통일
+   ══════════════════════════════════════════════════════════════ */
+
+:root {
+  /* ── Brand Colors ── */
+  --knock-primary: #e94560;
+  --knock-primary-hover: #f05a73;
+  --knock-primary-dim: rgba(233, 69, 96, 0.15);
+  --knock-primary-glow: rgba(233, 69, 96, 0.3);
+
+  --knock-blue: #4a9eff;
+  --knock-blue-dim: rgba(74, 158, 255, 0.15);
+
+  --knock-success: #34c759;
+  --knock-success-dim: rgba(52, 199, 89, 0.12);
+  --knock-warning: #ff8a50;
+  --knock-warning-dim: rgba(255, 138, 80, 0.12);
+
+  /* ── Surface Colors ── */
+  --knock-bg: #060611;
+  --knock-bg-card: #0d0d1a;
+  --knock-bg-elevated: #151920;
+  --knock-bg-overlay: rgba(6, 6, 17, 0.85);
+  --knock-bg-overlay-dense: rgba(6, 6, 17, 0.95);
+  --knock-bg-glass: rgba(255, 255, 255, 0.04);
+
+  /* ── Text Colors ── */
+  --knock-text: #e8e8ed;
+  --knock-text-bright: #ffffff;
+  --knock-text-muted: #72728a;
+  --knock-text-dim: #6e7a8d;
+
+  /* ── Border Colors ── */
+  --knock-border: #1e1e32;
+  --knock-border-accent: rgba(233, 69, 96, 0.44);
+
+  /* ── Typography ── */
+  --knock-font-body: 'Pretendard Variable', 'Pretendard', system-ui, -apple-system, sans-serif;
+  --knock-font-display: 'Outfit', var(--font-outfit), sans-serif;
+
+  /* ── Radius Scale ── */
+  --knock-radius-xs: 4px;
+  --knock-radius-sm: 8px;
+  --knock-radius-md: 12px;
+  --knock-radius-lg: 16px;
+  --knock-radius-pill: 9999px;
+
+  /* ── Shadows ── */
+  --knock-glow-primary: 0 0 20px var(--knock-primary-glow);
+  --knock-shadow-card-hover: 0 4px 20px rgba(233, 69, 96, 0.15);
+}
+
+/* ══ Button System ══ */
+
+.knock-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  font-family: var(--knock-font-body);
+  font-weight: 700;
+  border: none;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  text-decoration: none;
+  border-radius: var(--knock-radius-md);
+  padding: 14px 32px;
+  font-size: 15px;
+}
+
+.knock-btn-primary {
+  background: var(--knock-primary);
+  color: var(--knock-text-bright);
+  box-shadow: var(--knock-glow-primary);
+}
+
+.knock-btn-primary:hover {
+  background: var(--knock-primary-hover);
+  box-shadow: 0 4px 24px var(--knock-primary-glow);
+  transform: translateY(-1px);
+}
+
+.knock-btn-outline {
+  background: transparent;
+  color: var(--knock-primary);
+  border: 1px solid var(--knock-primary);
+}
+
+.knock-btn-outline:hover {
+  background: var(--knock-primary-dim);
+}
+
+.knock-btn-ghost {
+  background: transparent;
+  color: var(--knock-blue);
+  padding: 8px 16px;
+}
+
+.knock-btn-ghost:hover {
+  color: var(--knock-primary);
+}
+
+/* Size variants */
+.knock-btn-sm { padding: 8px 16px; font-size: 13px; }
+.knock-btn-lg { padding: 16px 40px; font-size: 16px; border-radius: var(--knock-radius-lg); }
+
+/* ══ Link System ══ */
+
+.knock-link {
+  color: var(--knock-blue);
+  font-weight: 600;
+  text-decoration: none;
+  transition: color 0.2s;
+}
+
+.knock-link:hover {
+  color: var(--knock-primary);
+}
+
+.knock-link-muted {
+  color: var(--knock-text-muted);
+  font-weight: 500;
+  text-decoration: none;
+  transition: color 0.2s;
+}
+
+.knock-link-muted:hover {
+  color: var(--knock-text);
+}
+
+/* ══ Teaser Banner ══ */
+
+.knock-teaser {
+  display: inline-block;
+  background: var(--knock-bg-glass);
+  border: 1px solid var(--knock-border);
+  border-radius: var(--knock-radius-md);
+  padding: 12px 20px;
+  font-size: 13px;
+  color: var(--knock-text-muted);
+  text-decoration: none;
+  transition: border-color 0.2s;
+}
+
+.knock-teaser:hover {
+  border-color: var(--knock-primary);
+}
+
+/* ══ Cross-link Card ══ */
+
+.knock-crosslink {
+  display: block;
+  text-align: center;
+  background: var(--knock-bg-card);
+  border: 1px solid var(--knock-border);
+  border-radius: var(--knock-radius-lg);
+  padding: 24px;
+  text-decoration: none;
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+.knock-crosslink:hover {
+  border-color: var(--knock-primary);
+  box-shadow: var(--knock-shadow-card-hover);
+}
+
+.knock-crosslink-emoji { font-size: 24px; margin-bottom: 12px; }
+.knock-crosslink-title { font-size: 16px; font-weight: 700; color: var(--knock-text); margin-bottom: 8px; }
+.knock-crosslink-sub { font-size: 13px; color: var(--knock-text-muted); margin-bottom: 16px; }
+.knock-crosslink-action { font-size: 14px; font-weight: 600; color: var(--knock-primary); }
+
+/* ══ Nav Styles ══ */
+
+.knock-nav-bg {
+  background: var(--knock-bg-overlay);
+  backdrop-filter: blur(12px);
+  border-bottom: 1px solid var(--knock-border);
+}
+
+.knock-nav-bg-dense {
+  background: var(--knock-bg-overlay-dense);
+  backdrop-filter: blur(12px);
+  border-top: 1px solid var(--knock-border);
+}
+
+.knock-dropdown {
+  background: var(--knock-bg-card);
+  border: 1px solid var(--knock-border);
+  border-radius: var(--knock-radius-md);
+}
+
+/* ══ Utility Classes ══ */
+
+.knock-text-primary { color: var(--knock-primary); }
+.knock-text-blue { color: var(--knock-blue); }
+.knock-text-muted { color: var(--knock-text-muted); }
+.knock-text-success { color: var(--knock-success); }
+.knock-bg-card { background: var(--knock-bg-card); }
+.knock-border { border-color: var(--knock-border); }

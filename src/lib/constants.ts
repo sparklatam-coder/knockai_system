@@ -2,72 +2,72 @@ import type { NodeKey, NodeMeta } from "@/lib/types";
 
 export const NODE_META: Record<NodeKey, NodeMeta> = {
   awareness: {
-    label: "인지 확대",
+    label: "검색 노출",
     emoji: "🔍",
-    description: "네이버 플레이스 · 블로그 · 광고 · SNS",
+    description: "네이버 지도 · 블로그 · SNS",
     group: "pipeline",
     order: 1,
   },
   lead_capture: {
-    label: "리드 획득",
+    label: "문의 유입",
     emoji: "📋",
-    description: "전화 · 카카오톡 · 네이버 예약 · 홈페이지 폼",
+    description: "전화 · 카톡 · 네이버 예약",
     group: "pipeline",
     order: 2,
   },
   lead_nurture: {
-    label: "리드 육성",
+    label: "환자 설득",
     emoji: "💬",
-    description: "팔로업 · 설득 · 유망 리드 확인",
+    description: "안내 · 재연락",
     group: "pipeline",
     order: 3,
   },
   new_patient: {
-    label: "신환 획득",
+    label: "신환 확보",
     emoji: "🏥",
-    description: "내원 → 상담 → 치료 결정",
+    description: "내원 · 상담 · 치료결정",
     group: "pipeline",
     order: 4,
   },
   cs_onboarding: {
-    label: "온보딩",
+    label: "첫 방문 케어",
     emoji: "🎯",
-    description: "첫 48시간 관리",
+    description: "첫 48시간",
     group: "cs360",
     order: 5,
   },
   cs_upsell: {
-    label: "업셀",
+    label: "추가 진료",
     emoji: "💎",
-    description: "추가 진료 안내",
+    description: "필요한 진료 안내",
     group: "cs360",
     order: 6,
   },
   cs_support: {
-    label: "고객 지원",
+    label: "사후 관리",
     emoji: "🤝",
-    description: "사후 관리",
+    description: "불편사항 케어",
     group: "cs360",
     order: 7,
   },
   cs_education: {
-    label: "건강 교육",
+    label: "건강 정보",
     emoji: "📚",
-    description: "콘텐츠 제공",
+    description: "콘텐츠",
     group: "cs360",
     order: 8,
   },
   cs_community: {
-    label: "커뮤니티",
+    label: "리뷰·소개",
     emoji: "👥",
-    description: "리뷰 · 소개",
+    description: "입소문",
     group: "cs360",
     order: 9,
   },
   cs_analytics: {
-    label: "분석",
+    label: "성과 분석",
     emoji: "📊",
-    description: "데이터 리포트",
+    description: "리포트",
     group: "cs360",
     order: 10,
   },
@@ -92,7 +92,6 @@ export const DEFAULT_SUB_NODES: Record<NodeKey, string[]> = {
     "팔로업 프로세스 수립",
     "부재중 콜백 ARS 설정",
     "카카오 자동응답 설정",
-    // 유망 리드 → 초진 이벤트
     "예약 확정 + 리마인드 알림 설정",
     "초진 이벤트 기획 (첫 방문 할인/무료 검진)",
     "오시는 길 + 주차 안내 자동 문자 발송",
@@ -106,6 +105,25 @@ export const DEFAULT_SUB_NODES: Record<NodeKey, string[]> = {
   cs_analytics: ["월간 유입/전환 리포트", "키워드 순위 추적"],
 };
 
+/**
+ * lead_nurture DB 노드를 관리자 화면에서 "환자 설득" / "방문 예정" 두 섹션으로 나눠 표시.
+ * sort_order 기준: 0-2 → 환자 설득, 3-5 → 방문 예정
+ */
+export const LEAD_NURTURE_SPLIT = {
+  persuade: {
+    label: "환자 설득",
+    emoji: "💬",
+    description: "안내 · 재연락",
+    sortRange: [0, 2] as const, // sort_order 0,1,2
+  },
+  qualified: {
+    label: "방문 예정",
+    emoji: "📅",
+    description: "예약 확정 · 내원 준비",
+    sortRange: [3, 5] as const, // sort_order 3,4,5
+  },
+} as const;
+
 // ============================================
 // 패키지 티어 시스템
 // ============================================
@@ -118,6 +136,7 @@ export const PACKAGE_INFO: Record<PackageTier, {
   description: string;
   guarantee: string;
   color: string;
+  priceNote?: string;
 }> = {
   entry: {
     label: "Entry",
@@ -128,10 +147,11 @@ export const PACKAGE_INFO: Record<PackageTier, {
   },
   basic: {
     label: "Basic",
-    price: "100만원/월",
+    price: "100~150만원/월",
     description: "플레이스 + 블로그/카페 확장 + SNS",
     guarantee: "3개월 내 5위 이내 개런티 (미달성 시 달성까지 무료 연장)",
     color: "#2196F3",
+    priceNote: "키워드 유입량·경쟁 강도에 따라 변동될 수 있습니다.\n정확한 견적은 상담을 통해 안내드립니다.",
   },
   standard: {
     label: "Standard",

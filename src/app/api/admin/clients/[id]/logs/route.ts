@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { getAdminRequestContext, resolveClientId } from "@/lib/api-auth";
-import type { ActionType } from "@/lib/types";
+import type { LogType } from "@/lib/types";
 
 interface RouteContext {
   params: Promise<{
@@ -10,9 +10,9 @@ interface RouteContext {
 
 interface CreateLogPayload {
   node_key: string;
-  action_type: ActionType;
+  log_type: LogType;
   content: string;
-  visible_to_client: boolean;
+  image_urls?: string[];
 }
 
 export async function PATCH(request: Request, context: RouteContext) {
@@ -26,7 +26,7 @@ export async function PATCH(request: Request, context: RouteContext) {
   const id = await resolveClientId(adminClient, rawId);
   if (!id) return NextResponse.json({ error: "고객을 찾을 수 없습니다." }, { status: 404 });
 
-  let payload: { log_id: string; content: string; visible_to_client: boolean };
+  let payload: { log_id: string; content: string };
   try {
     payload = (await request.json()) as typeof payload;
   } catch {
@@ -39,7 +39,7 @@ export async function PATCH(request: Request, context: RouteContext) {
 
   const { data, error } = await adminClient
     .from("activity_logs")
-    .update({ content: payload.content.trim(), visible_to_client: payload.visible_to_client })
+    .update({ content: payload.content.trim() })
     .eq("id", payload.log_id)
     .eq("client_id", id)
     .select("*")
@@ -103,15 +103,20 @@ export async function POST(request: Request, context: RouteContext) {
     return NextResponse.json({ error: "로그 내용은 필수입니다." }, { status: 400 });
   }
 
+  const logType = payload.log_type === "work" ? "work" : "memo";
+  const isPublic = logType === "work";
+
   const { data, error } = await adminClient
     .from("activity_logs")
     .insert({
       client_id: id,
       node_key: payload.node_key,
-      action_type: payload.action_type,
+      action_type: logType === "work" ? "task_complete" : "note",
+      log_type: logType,
       content: payload.content.trim(),
-      visible_to_client: payload.visible_to_client,
+      visible_to_client: isPublic,
       created_by: user.id,
+      image_urls: payload.image_urls ?? [],
     })
     .select("*")
     .single();

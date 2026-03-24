@@ -2,21 +2,95 @@
 
 import { useEffect, useState } from "react";
 import { createPortal } from "react-dom";
-import { NODE_META, ALL_NODE_KEYS, PACKAGE_INFO, PACKAGE_NODE_ACCESS, isNodeLocked, getMinimumPackageForNode } from "@/lib/constants";
+import { NODE_META, ALL_NODE_KEYS, PACKAGE_INFO, PACKAGE_NODE_ACCESS, isNodeLocked, getMinimumPackageForNode, LEAD_NURTURE_SPLIT } from "@/lib/constants";
 import { UpgradeModal } from "@/components/UpgradeModal";
+import { SharedKnockSystem, DEFAULT_PIPELINE_ROWS, DEFAULT_SEGMENTS } from "@/components/knock-system/SharedKnockSystem";
+import type { DashboardNodeStatus } from "@/components/knock-system/SharedKnockSystem";
 import { PackageBadge } from "@/components/PackageBadge";
 import type { ActivityLog, ActionType, Client, NodeKey, NodeRecord, NodeStatus, PackageTier } from "@/lib/types";
 
+/* ── image lightbox ───────────────────────────────────── */
+function ImageLightbox({ urls }: { urls: string[] }) {
+  const [open, setOpen] = useState<number | null>(null);
+  if (urls.length === 0) return null;
+
+  const overlay = open !== null ? createPortal(
+    <div
+      onClick={() => setOpen(null)}
+      style={{
+        position: "fixed", inset: 0, zIndex: 99999,
+        background: "rgba(0,0,0,0.9)", display: "flex",
+        alignItems: "center", justifyContent: "center", cursor: "zoom-out",
+      }}
+    >
+      <button
+        onClick={(e) => { e.stopPropagation(); setOpen(null); }}
+        style={{
+          position: "fixed", top: 20, right: 20,
+          background: "rgba(255,255,255,0.2)", border: "none", borderRadius: "50%",
+          width: 48, height: 48, fontSize: 28, color: "#fff", cursor: "pointer",
+          display: "flex", alignItems: "center", justifyContent: "center",
+        }}
+      >✕</button>
+      {urls.length > 1 && open > 0 && (
+        <button
+          onClick={(e) => { e.stopPropagation(); setOpen(open - 1); }}
+          style={{
+            position: "fixed", left: 20, top: "50%", transform: "translateY(-50%)",
+            background: "rgba(255,255,255,0.2)", border: "none", borderRadius: "50%",
+            width: 48, height: 48, fontSize: 24, color: "#fff", cursor: "pointer",
+          }}
+        >‹</button>
+      )}
+      {urls.length > 1 && open < urls.length - 1 && (
+        <button
+          onClick={(e) => { e.stopPropagation(); setOpen(open + 1); }}
+          style={{
+            position: "fixed", right: 20, top: "50%", transform: "translateY(-50%)",
+            background: "rgba(255,255,255,0.2)", border: "none", borderRadius: "50%",
+            width: 48, height: 48, fontSize: 24, color: "#fff", cursor: "pointer",
+          }}
+        >›</button>
+      )}
+      <img
+        src={urls[open]}
+        alt={`첨부 ${open + 1}`}
+        onClick={(e) => e.stopPropagation()}
+        style={{ maxWidth: "90vw", maxHeight: "85vh", objectFit: "contain", borderRadius: 8, cursor: "default" }}
+      />
+    </div>,
+    document.body,
+  ) : null;
+
+  return (
+    <>
+      <div style={{ display: "flex", gap: 6, flexWrap: "wrap", marginTop: 8 }}>
+        {urls.map((url, i) => (
+          <img
+            key={i} src={url} alt={`첨부 ${i + 1}`}
+            onClick={() => setOpen(i)}
+            style={{
+              width: 120, height: 80, objectFit: "cover", borderRadius: 8,
+              border: "1px solid var(--border)", cursor: "pointer",
+            }}
+          />
+        ))}
+      </div>
+      {overlay}
+    </>
+  );
+}
+
 /* ── status colour tokens ─────────────────────────────── */
 const SC: Record<NodeStatus, string> = {
-  active:      "#34C759",
-  in_progress: "#F9A825",
-  inactive:    "#9E9E9E",
+  active:      "var(--status-active)",
+  in_progress: "var(--status-progress)",
+  inactive:    "var(--status-inactive)",
 };
 const SB: Record<NodeStatus, string> = {
-  active:      "rgba(52,199,89,0.14)",
-  in_progress: "rgba(249,168,37,0.14)",
-  inactive:    "rgba(158,158,158,0.10)",
+  active:      "var(--status-active-bg)",
+  in_progress: "var(--status-progress-bg)",
+  inactive:    "var(--status-inactive-bg)",
 };
 const SL: Record<NodeStatus, string> = {
   active:      "완료",
@@ -75,7 +149,7 @@ function linkify(text: string) {
         style={{
           color: "var(--gP)",
           textDecoration: "underline",
-          textDecorationColor: "rgba(79,156,255,0.4)",
+          textDecorationColor: "var(--accent-hover)",
           textUnderlineOffset: 3,
           wordBreak: "break-all",
         }}
@@ -89,99 +163,15 @@ function linkify(text: string) {
   return parts;
 }
 
-/* ── sub-components ────────────────────────────────────── */
-function LockBadge({ centered }: { centered?: boolean }) {
-  if (centered) {
-    return (
-      <div
-        style={{
-          position: "absolute",
-          inset: 0,
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
-          zIndex: 3,
-          background: "rgba(0,0,0,0.25)",
-          borderRadius: 10,
-          backdropFilter: "blur(2px)",
-        }}
-      >
-        <span style={{
-          width: 44,
-          height: 44,
-          borderRadius: "50%",
-          background: "rgba(0,0,0,0.6)",
-          backdropFilter: "blur(6px)",
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
-          fontSize: 22,
-          border: "1px solid rgba(255,255,255,0.12)",
-          boxShadow: "0 4px 16px rgba(0,0,0,0.4)",
-        }}>
-          🔒
-        </span>
-      </div>
-    );
-  }
-  return (
-    <span
-      style={{
-        position: "absolute",
-        top: 8,
-        right: 8,
-        width: 28,
-        height: 28,
-        borderRadius: "50%",
-        background: "rgba(0,0,0,0.55)",
-        backdropFilter: "blur(4px)",
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "center",
-        fontSize: 14,
-        zIndex: 2,
-        border: "1px solid rgba(255,255,255,0.1)",
-      }}
-    >
-      🔒
-    </span>
-  );
-}
-
-function StatusPill({ status }: { status: NodeStatus }) {
-  const pulseAnim = status === "active"
-    ? "statusPulseGreen 2s ease-in-out infinite"
-    : status === "in_progress"
-      ? "statusPulseYellow 2.5s ease-in-out infinite"
-      : undefined;
-  return (
-    <span style={{ display: "inline-flex", alignItems: "center", gap: 5, padding: "4px 12px", borderRadius: 100, fontSize: 12, fontWeight: 700, background: SB[status], color: SC[status], marginTop: 6 }}>
-      <span style={{ width: 6, height: 6, borderRadius: "50%", background: SC[status], display: "inline-block", animation: pulseAnim }} />
-      {SL[status]}
-    </span>
-  );
-}
-
-function ClickableNode({ node, onClick, children }: { node: NodeRecord; onClick: (key: NodeKey) => void; children: React.ReactNode }) {
-  const meta = NODE_META[node.node_key];
-  return (
-    <div
-      className="p-node"
-      style={{ ["--ng" as string]: SC[node.status], cursor: "pointer" }}
-      onClick={() => onClick(node.node_key)}
-      role="button"
-      tabIndex={0}
-      aria-label={`${meta.label} — ${SL[node.status]}`}
-      onKeyDown={(e) => e.key === "Enter" && onClick(node.node_key)}
-    >
-      {children}
-    </div>
-  );
-}
 
 /* ── log modal ─────────────────────────────────────────── */
-function LogModal({ nodeKey, logs, onClose }: { nodeKey: NodeKey; logs: ActivityLog[]; onClose: () => void }) {
-  const meta      = NODE_META[nodeKey];
+function LogModal({ nodeKey, displayKey, logs, onClose }: { nodeKey: NodeKey; displayKey?: string; logs: ActivityLog[]; onClose: () => void }) {
+  // If displayKey is "qualified", show 방문 예정 info instead of 환자 설득
+  const isQualified = displayKey === "qualified";
+  const splitInfo = isQualified ? LEAD_NURTURE_SPLIT.qualified : null;
+  const meta      = splitInfo
+    ? { ...NODE_META[nodeKey], label: splitInfo.label, emoji: splitInfo.emoji, description: splitInfo.description }
+    : NODE_META[nodeKey];
   const nodeLogs  = logs.filter((l) => l.node_key === nodeKey);
 
   return (
@@ -219,12 +209,12 @@ function LogModal({ nodeKey, logs, onClose }: { nodeKey: NodeKey; logs: Activity
               }
               return Object.entries(groups).map(([group, groupLogs]) => (
                 <div key={group}>
-                  <div style={{ fontSize: 11, fontWeight: 700, color: "var(--tdim)", textTransform: "uppercase", letterSpacing: "0.5px", padding: "12px 0 6px", borderBottom: "1px solid rgba(255,255,255,0.04)" }}>
+                  <div style={{ fontSize: 11, fontWeight: 700, color: "var(--tdim)", textTransform: "uppercase", letterSpacing: "0.5px", padding: "12px 0 6px", borderBottom: "1px solid var(--overlay-3)" }}>
                     {group}
                   </div>
                   <ul style={{ listStyle: "none", display: "flex", flexDirection: "column", gap: 0 }}>
                     {groupLogs.map((log) => (
-                      <li key={log.id} style={{ padding: "14px 0", borderBottom: "1px solid rgba(255,255,255,0.04)", display: "flex", flexDirection: "column", gap: 8 }}>
+                      <li key={log.id} style={{ padding: "14px 0", borderBottom: "1px solid var(--overlay-3)", display: "flex", flexDirection: "column", gap: 8 }}>
                         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12 }}>
                           <span style={{
                             display: "inline-flex", alignItems: "center", gap: 5,
@@ -245,10 +235,13 @@ function LogModal({ nodeKey, logs, onClose }: { nodeKey: NodeKey; logs: Activity
                         {log.attachment_url && (
                           <a href={log.attachment_url} target="_blank" rel="noopener noreferrer" style={{
                             display: "inline-flex", alignItems: "center", gap: 6, padding: "6px 14px", borderRadius: 8, fontSize: 13, fontWeight: 600,
-                            background: "rgba(79,156,255,0.08)", border: "1px solid rgba(79,156,255,0.2)", color: "var(--gP)", textDecoration: "none", width: "fit-content",
+                            background: "var(--accent-bg)", border: "1px solid var(--accent-border)", color: "var(--gP)", textDecoration: "none", width: "fit-content",
                           }}>
                             📎 첨부 파일 열기
                           </a>
+                        )}
+                        {(log.image_urls?.length ?? 0) > 0 && (
+                          <ImageLightbox urls={log.image_urls} />
                         )}
                       </li>
                     ))}
@@ -268,8 +261,8 @@ function QualifiedLeadPopup({ logs, onClose }: { logs: ActivityLog[]; onClose: (
   const nurtureLogs = logs.filter((l) => l.node_key === "lead_nurture");
 
   const ITEMS = [
-    { icon: "📅", title: "예약 확정 + 리마인드", desc: "유망 리드 예약 일정 확정 후 리마인드 메시지 자동 발송", color: "#34C759" },
-    { icon: "🎁", title: "초진 이벤트 기획", desc: "첫 내원 환자 대상 특별 혜택 · 이벤트 설계 및 발송", color: "#FF9800" },
+    { icon: "📅", title: "예약 확정 + 리마인드", desc: "유망 리드 예약 일정 확정 후 리마인드 메시지 자동 발송", color: "var(--status-active)" },
+    { icon: "🎁", title: "초진 이벤트 기획", desc: "첫 내원 환자 대상 특별 혜택 · 이벤트 설계 및 발송", color: "var(--gold-warm)" },
     { icon: "📍", title: "오시는 길 문자 발송", desc: "예약 확정 시 위치·주차 안내 자동 발송으로 내원율 향상", color: "var(--gP)" },
     { icon: "📊", title: "리드 전환 추적", desc: "유망 리드 → 예약 → 내원까지의 전환율 실시간 모니터링", color: "#E040FB" },
   ];
@@ -290,7 +283,7 @@ function QualifiedLeadPopup({ logs, onClose }: { logs: ActivityLog[]; onClose: (
           {ITEMS.map((item) => (
             <div key={item.title} style={{
               padding: "14px 16px", borderRadius: 12,
-              background: "rgba(255,255,255,0.03)", border: "1px solid var(--border)",
+              background: "var(--overlay-2)", border: "1px solid var(--border)",
               display: "flex", alignItems: "center", gap: 14,
             }}>
               <div style={{
@@ -314,7 +307,7 @@ function QualifiedLeadPopup({ logs, onClose }: { logs: ActivityLog[]; onClose: (
             <div style={{ maxHeight: "30vh", overflowY: "auto" }}>
               <ul style={{ listStyle: "none", display: "flex", flexDirection: "column", gap: 0 }}>
                 {nurtureLogs.slice(0, 8).map((log) => (
-                  <li key={log.id} style={{ padding: "10px 0", borderBottom: "1px solid rgba(255,255,255,0.04)", display: "flex", flexDirection: "column", gap: 6 }}>
+                  <li key={log.id} style={{ padding: "10px 0", borderBottom: "1px solid var(--overlay-3)", display: "flex", flexDirection: "column", gap: 6 }}>
                     <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12 }}>
                       <span style={{
                         display: "inline-flex", alignItems: "center", gap: 5,
@@ -352,10 +345,10 @@ function PlatinumUpgradePopup({ currentTier, clientName, onClose }: { currentTie
   const platInfo = PACKAGE_INFO.platinum;
 
   const BENEFITS = [
-    { icon: "📞", title: "전화 응대 전담", desc: "전문 상담사가 모든 신환 전화를 직접 응대", color: "#FFC107" },
-    { icon: "💬", title: "채팅 응대 전담", desc: "카카오톡·네이버톡톡 실시간 채팅 응대 대행", color: "#FF9800" },
+    { icon: "📞", title: "전화 응대 전담", desc: "전문 상담사가 모든 신환 전화를 직접 응대", color: "var(--gold)" },
+    { icon: "💬", title: "채팅 응대 전담", desc: "카카오톡·네이버톡톡 실시간 채팅 응대 대행", color: "var(--gold-warm)" },
     { icon: "🏥", title: "신환 유입 책임제", desc: "성과 기반 인센티브 — 신환 유입 결과에 책임", color: "#E94560" },
-    { icon: "📊", title: "VIP 전용 리포트", desc: "주간 콜 분석·전환율·예약률 전용 대시보드 제공", color: "#34C759" },
+    { icon: "📊", title: "VIP 전용 리포트", desc: "주간 콜 분석·전환율·예약률 전용 대시보드 제공", color: "var(--status-active)" },
     { icon: "🎯", title: "풀 퍼널 최적화", desc: "인지부터 재방문까지 전 과정 통합 관리·최적화", color: "var(--gP)" },
   ];
 
@@ -367,33 +360,33 @@ function PlatinumUpgradePopup({ currentTier, clientName, onClose }: { currentTie
         {/* Crown icon */}
         <div style={{
           width: 80, height: 80, borderRadius: "50%",
-          background: "linear-gradient(135deg, rgba(255,193,7,0.15), rgba(255,152,0,0.08))",
-          border: "2px solid rgba(255,193,7,0.4)",
+          background: "linear-gradient(135deg, var(--gold-border), var(--gold-bg))",
+          border: "2px solid var(--gold-border)",
           display: "flex", alignItems: "center", justifyContent: "center",
           margin: "0 auto 20px", fontSize: 36,
-          boxShadow: "0 0 40px rgba(255,193,7,0.15)",
+          boxShadow: "0 0 40px var(--gold-bg)",
           animation: "floatGlow 3s ease-in-out infinite",
         }}>👑</div>
 
-        <h3 style={{ fontSize: 22, fontWeight: 900, marginBottom: 6, color: "#FFC107" }}>
+        <h3 style={{ fontSize: 22, fontWeight: 900, marginBottom: 6, color: "var(--gold)" }}>
           Platinum 전환 안내
         </h3>
         <p style={{ fontSize: 14, color: "var(--tsub)", lineHeight: 1.7, marginBottom: 24 }}>
           전문 상담사가 전화·채팅을 직접 응대하여<br />
-          <strong style={{ color: "#FFC107" }}>신환 유입을 책임</strong>집니다
+          <strong style={{ color: "var(--gold)" }}>신환 유입을 책임</strong>집니다
         </p>
 
         {/* Current → Platinum comparison */}
         <div style={{ display: "grid", gridTemplateColumns: "1fr auto 1fr", gap: 12, alignItems: "center", marginBottom: 20 }}>
-          <div style={{ background: "rgba(255,255,255,0.03)", border: `1px solid ${currentInfo.color}33`, borderRadius: 12, padding: "14px 12px" }}>
+          <div style={{ background: "var(--overlay-2)", border: `1px solid ${currentInfo.color}33`, borderRadius: 12, padding: "14px 12px" }}>
             <div style={{ fontSize: 11, fontWeight: 700, color: "var(--tdim)", marginBottom: 6, textTransform: "uppercase" }}>현재 패키지</div>
             <div style={{ fontSize: 16, fontWeight: 900, color: currentInfo.color, marginBottom: 4 }}>{currentInfo.label}</div>
             <div style={{ fontSize: 12, color: "var(--tsub)" }}>{currentInfo.price}</div>
           </div>
           <div style={{ fontSize: 20, color: "var(--tdim)" }}>→</div>
-          <div style={{ background: "rgba(255,193,7,0.06)", border: "1px solid rgba(255,193,7,0.3)", borderRadius: 12, padding: "14px 12px" }}>
+          <div style={{ background: "var(--gold-bg)", border: "1px solid var(--gold-border)", borderRadius: 12, padding: "14px 12px" }}>
             <div style={{ fontSize: 11, fontWeight: 700, color: "var(--tdim)", marginBottom: 6, textTransform: "uppercase" }}>추천 패키지</div>
-            <div style={{ fontSize: 16, fontWeight: 900, color: "#FFC107", marginBottom: 4 }}>Platinum</div>
+            <div style={{ fontSize: 16, fontWeight: 900, color: "var(--gold)", marginBottom: 4 }}>Platinum</div>
             <div style={{ fontSize: 12, color: "var(--tsub)" }}>{platInfo.price}</div>
           </div>
         </div>
@@ -408,7 +401,7 @@ function PlatinumUpgradePopup({ currentTier, clientName, onClose }: { currentTie
               <div key={b.title} style={{
                 display: "flex", alignItems: "center", gap: 12,
                 padding: "10px 14px", borderRadius: 10,
-                background: "rgba(255,255,255,0.02)", border: "1px solid var(--border)",
+                background: "var(--overlay-1)", border: "1px solid var(--border)",
               }}>
                 <span style={{ fontSize: 18, flexShrink: 0 }}>{b.icon}</span>
                 <div>
@@ -422,7 +415,7 @@ function PlatinumUpgradePopup({ currentTier, clientName, onClose }: { currentTie
 
         {/* Contact */}
         <div style={{
-          background: "rgba(255,255,255,0.03)", border: "1px solid var(--border)",
+          background: "var(--overlay-2)", border: "1px solid var(--border)",
           borderRadius: 12, padding: "16px 20px", display: "flex", flexDirection: "column", gap: 8,
           textAlign: "left", marginBottom: 20,
         }}>
@@ -445,7 +438,7 @@ function PlatinumUpgradePopup({ currentTier, clientName, onClose }: { currentTie
         {sent ? (
           <div style={{
             padding: "14px 0", borderRadius: 12,
-            background: "rgba(52,199,89,0.12)", color: "#34C759",
+            background: "var(--status-active-bg)", color: "var(--status-active)",
             fontSize: 15, fontWeight: 800, textAlign: "center",
             display: "flex", alignItems: "center", justifyContent: "center", gap: 8,
           }}>
@@ -476,7 +469,7 @@ function PlatinumUpgradePopup({ currentTier, clientName, onClose }: { currentTie
               } catch { /* ignore */ } finally { setSending(false); }
             }} disabled={sending} type="button" style={{
               flex: 1, padding: "12px 0", borderRadius: 10, border: "none",
-              background: "linear-gradient(135deg, #FFC107, #FF9800)",
+              background: "linear-gradient(135deg, var(--gold), var(--gold-warm))",
               color: "#1a1a2e", fontSize: 15, fontWeight: 800,
               cursor: sending ? "not-allowed" : "pointer",
               opacity: sending ? 0.6 : 1,
@@ -499,6 +492,7 @@ interface Props {
 
 export function DashboardCanvas({ client, nodes, logs }: Props) {
   const [selectedKey, setSelectedKey] = useState<NodeKey | null>(null);
+  const [selectedDisplayKey, setSelectedDisplayKey] = useState<string | null>(null);
   const [lockedKey, setLockedKey] = useState<NodeKey | null>(null);
   const [showQualified, setShowQualified] = useState(false);
   const [showPlatinumUpgrade, setShowPlatinumUpgrade] = useState(false);
@@ -506,11 +500,12 @@ export function DashboardCanvas({ client, nodes, logs }: Props) {
   const locked = (key: string) => isNodeLocked(key, client.package_tier);
 
   /** 노드 클릭 핸들러 — 잠긴 노드는 업그레이드 팝업, 열린 노드는 로그 모달 */
-  const handleNodeClick = (key: NodeKey) => {
-    if (locked(key)) {
-      setLockedKey(key);
+  const handleNodeClick = (dbKey: NodeKey, displayKey?: string) => {
+    if (locked(dbKey)) {
+      setLockedKey(dbKey);
     } else {
-      setSelectedKey(key);
+      setSelectedKey(dbKey);
+      setSelectedDisplayKey(displayKey ?? null);
     }
   };
 
@@ -526,11 +521,6 @@ export function DashboardCanvas({ client, nodes, logs }: Props) {
 
   const byKey = Object.fromEntries(nodes.map((n) => [n.node_key, n])) as Record<string, NodeRecord | undefined>;
 
-  const awareness   = byKey["awareness"];
-  const leadCapture = byKey["lead_capture"];
-  const leadNurture = byKey["lead_nurture"];
-  const newPatient  = byKey["new_patient"];
-
   const csKeys  = ["cs_onboarding", "cs_upsell", "cs_support", "cs_education", "cs_community", "cs_analytics"];
   const csNodes = csKeys.map((k) => byKey[k]).filter(Boolean) as NodeRecord[];
 
@@ -541,41 +531,65 @@ export function DashboardCanvas({ client, nodes, logs }: Props) {
   const inProgressCount = nodes.filter((n) => n.status === "in_progress").length;
   const inactiveCount   = nodes.filter((n) => n.status === "inactive").length;
 
-  // 6개 노드를 60° 간격으로 균등 배치 — 홈페이지와 동일 스펙
-  const WHEEL     = 680;
-  const CX        = 340;
-  const CY        = 340;
-  const R         = 248;   // 홈페이지와 동일
-  const SW        = 55;    // 홈페이지와 동일
-  const SH        = 34;    // 홈페이지와 동일
-  const CS_ANGLES = csNodes.map((_, i) => (360 / csNodes.length) * i);
-
   // count logs per node to show indicator
   const logCountByKey = logs.reduce<Record<string, number>>((acc, l) => {
     acc[l.node_key] = (acc[l.node_key] ?? 0) + 1;
     return acc;
   }, {});
 
-  function LogBadge({ nodeKey }: { nodeKey: NodeKey }) {
-    const count = logCountByKey[nodeKey] ?? 0;
-    if (count === 0) return null;
-    return (
-      <span style={{
-        display: "inline-flex", alignItems: "center", justifyContent: "center",
-        minWidth: 22, height: 22, borderRadius: 100,
-        background: "rgba(79,156,255,0.18)", color: "var(--gP)",
-        fontSize: 12, fontWeight: 800, padding: "0 8px", marginTop: 6,
-      }}>
-        {count}건
-      </span>
-    );
+  // Build nodeStatuses for SharedKnockSystem
+  const nodeStatusMap: Record<string, DashboardNodeStatus> = {};
+  for (const n of nodes) {
+    nodeStatusMap[n.node_key] = {
+      status: n.status,
+      logCount: logCountByKey[n.node_key] ?? 0,
+      locked: locked(n.node_key),
+    };
+    // Mirror lead_nurture status to "qualified" display key
+    if (n.node_key === "lead_nurture") {
+      nodeStatusMap["qualified"] = { ...nodeStatusMap[n.node_key] };
+    }
   }
+  // Map cs_ keys to segment ids used by SharedKnockSystem
+  const csKeyToSegmentId: Record<string, string> = {
+    cs_onboarding: "onboarding",
+    cs_upsell: "upsell",
+    cs_support: "support",
+    cs_education: "education",
+    cs_community: "community",
+    cs_analytics: "analytics",
+  };
+  for (const n of csNodes) {
+    const segId = csKeyToSegmentId[n.node_key];
+    if (segId) {
+      nodeStatusMap[segId] = {
+        status: n.status,
+        logCount: logCountByKey[n.node_key] ?? 0,
+        locked: locked(n.node_key),
+      };
+    }
+  }
+
+  // Dashboard segments — 6 nodes (no "product"), use DB order
+  const dashboardSegments = csNodes.map((n, i) => {
+    const meta = NODE_META[n.node_key];
+    const segId = csKeyToSegmentId[n.node_key] ?? n.node_key;
+    const defaultSeg = DEFAULT_SEGMENTS.find((s) => s.id === segId);
+    return {
+      id: segId,
+      label: defaultSeg?.label ?? meta.label,
+      sublabel: defaultSeg?.sublabel ?? meta.description,
+      icon: defaultSeg?.icon ?? meta.emoji,
+      color: defaultSeg?.color ?? "var(--gP)",
+      angle: (360 / csNodes.length) * i,
+    };
+  });
 
   return (
     <>
       {/* Portal modals to document.body to avoid transform containment */}
       {selectedKey && typeof document !== "undefined" && createPortal(
-        <LogModal nodeKey={selectedKey} logs={logs} onClose={() => setSelectedKey(null)} />,
+        <LogModal nodeKey={selectedKey} displayKey={selectedDisplayKey ?? undefined} logs={logs} onClose={() => { setSelectedKey(null); setSelectedDisplayKey(null); }} />,
         document.body,
       )}
       {lockedKey && typeof document !== "undefined" && createPortal(
@@ -604,7 +618,7 @@ export function DashboardCanvas({ client, nodes, logs }: Props) {
       <div style={{ display: "flex", flexDirection: "column", gap: 24 }}>
 
         {/* ── Overview ── */}
-        <div style={{ display: "flex", alignItems: "center", gap: 14, flexWrap: "wrap", padding: "12px 16px", background: "rgba(21,25,32,0.92)", border: "1px solid var(--border)", borderRadius: 12 }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 14, flexWrap: "wrap", padding: "12px 16px", background: "var(--card-alpha)", border: "1px solid var(--border)", borderRadius: 12 }}>
           <img
             src="/client-logo.jpeg"
             alt={`${client.name} 로고`}
@@ -641,10 +655,10 @@ export function DashboardCanvas({ client, nodes, logs }: Props) {
         {/* ── Summary cards ── */}
         <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 8 }}>
           {[
-            { icon: "📊", value: `${activeCount}/${nodes.length}`, label: "활성 노드", bg: "rgba(52,199,89,0.1)", color: "var(--text)" },
-            { icon: "📋", value: `${logs.length}`, label: "활동 기록", bg: "rgba(79,156,255,0.1)", color: "var(--text)" },
+            { icon: "📊", value: `${activeCount}/${nodes.length}`, label: "활성 노드", bg: "var(--status-active-bg)", color: "var(--text)" },
+            { icon: "📋", value: `${logs.length}`, label: "활동 기록", bg: "var(--accent-bg)", color: "var(--text)" },
             { icon: "💎", value: PACKAGE_INFO[client.package_tier].label, label: PACKAGE_INFO[client.package_tier].price, bg: `${PACKAGE_INFO[client.package_tier].color}18`, color: PACKAGE_INFO[client.package_tier].color },
-            { icon: "🕐", value: logs.length > 0 ? (() => { const d = Math.floor((Date.now() - new Date(logs[0].created_at).getTime()) / 864e5); return d === 0 ? "오늘" : `${d}일 전`; })() : "—", label: "마지막 업데이트", bg: "rgba(249,168,37,0.1)", color: "var(--text)" },
+            { icon: "🕐", value: logs.length > 0 ? (() => { const d = Math.floor((Date.now() - new Date(logs[0].created_at).getTime()) / 864e5); return d === 0 ? "오늘" : `${d}일 전`; })() : "—", label: "마지막 업데이트", bg: "var(--status-progress-bg)", color: "var(--text)" },
           ].map((c) => (
             <div key={c.label} className="panel-card" style={{ display: "flex", alignItems: "center", gap: 10 }}>
               <div style={{ width: 36, height: 36, borderRadius: 10, background: c.bg, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 16, flexShrink: 0 }}>
@@ -659,318 +673,145 @@ export function DashboardCanvas({ client, nodes, logs }: Props) {
         </div>
 
         {/* ── Status legend ── */}
-        <div style={{ display: "flex", gap: 12, flexWrap: "wrap", padding: "12px 16px", background: "rgba(255,255,255,0.02)", border: "1px solid var(--border)", borderRadius: 14, alignItems: "center", justifyContent: "space-between" }}>
-          <div style={{ display: "flex", gap: 16, flexWrap: "wrap" }}>
-            {(["active", "in_progress", "inactive"] as NodeStatus[]).map((s) => (
-              <div key={s} style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 13, color: "var(--tsub)" }}>
-                <span style={{ width: 8, height: 8, borderRadius: "50%", background: SC[s], display: "inline-block", flexShrink: 0 }} />
-                <span><strong style={{ color: SC[s] }}>{SL[s]}</strong></span>
-              </div>
-            ))}
-          </div>
-          <span style={{ fontSize: 12, color: "var(--tdim)" }}>클릭하여 상세 확인 →</span>
+        <div style={{ display: "flex", gap: 16, flexWrap: "wrap", padding: "8px 16px", alignItems: "center", justifyContent: "center" }}>
+          {([
+            ["active", "완료", "작업 완료"],
+            ["in_progress", "진행 중", "작업 진행중"],
+            ["inactive", "대기", "작업 진행 전"],
+          ] as const).map(([s, label, desc]) => (
+            <div key={s} style={{ display: "flex", alignItems: "center", gap: 5, fontSize: 11, color: "var(--tdim)" }}>
+              <span style={{ width: 6, height: 6, borderRadius: "50%", background: SC[s as NodeStatus], display: "inline-block", flexShrink: 0 }} />
+              <span style={{ color: SC[s as NodeStatus], fontWeight: 600 }}>{label}</span>
+              <span>{desc}</span>
+            </div>
+          ))}
         </div>
 
-        {/* ── Main flywheel ── */}
-        <div className="main-row">
+        {/* ── Main knock system ── */}
+        <SharedKnockSystem
+          mode="dashboard"
+          pipelineRows={DEFAULT_PIPELINE_ROWS}
+          segments={dashboardSegments}
+          nodeStatuses={nodeStatusMap}
+          onNodeClick={(key) => {
+            // Map shared keys back to dashboard node keys
+            const keyMap: Record<string, NodeKey> = {
+              awareness: "awareness",
+              lead_capture: "lead_capture",
+              lead_nurture: "lead_nurture",
+              qualified: "lead_nurture",
+              new_patient: "new_patient",
+            };
+            const nodeKey = keyMap[key] ?? key as NodeKey;
+            handleNodeClick(nodeKey, key);
+          }}
+          onSegmentClick={(id) => {
+            // Map segment ids back to cs_ node keys
+            const segToKey: Record<string, NodeKey> = {
+              onboarding: "cs_onboarding",
+              upsell: "cs_upsell",
+              support: "cs_support",
+              education: "cs_education",
+              community: "cs_community",
+              analytics: "cs_analytics",
+            };
+            const nodeKey = segToKey[id] ?? id as NodeKey;
+            handleNodeClick(nodeKey);
+          }}
+        />
 
-          {/* Pipeline */}
-          <div className="pipeline-col">
-            <div className="sec-label">신규 환자 확보</div>
-            <div className="sec-title">신규 환자 확보 파이프라인</div>
-            <div className="sec-desc">잠재 환자 발견 → 리드 확보 → 신환 획득까지의 여정</div>
+        {/* ── Return loop + Platinum box ── */}
+        <div className="return-loop">↩ 커뮤니티(리뷰·소개) → 인지확대 파이프라인으로 순환</div>
 
-            {awareness && (
-              <>
-                <div className={`p-row${locked("awareness") ? " locked-node" : ""}`}>
-                  <ClickableNode node={awareness} onClick={handleNodeClick}>
-                    <div className="p-box" style={{ borderColor: SC[awareness.status], background: `linear-gradient(135deg,${SB[awareness.status]},var(--card))`, position: "relative" }}>
-                      {locked("awareness") && <LockBadge centered />}
-                      <div className="ico">{NODE_META.awareness.emoji}</div>
-                      <div className="lb">{NODE_META.awareness.label}</div>
-                      <div className="sb">{NODE_META.awareness.description}</div>
-                      <StatusPill status={awareness.status} />
-                      {!locked("awareness") && <LogBadge nodeKey="awareness" />}
-                    </div>
-                  </ClickableNode>
-                </div>
-                <div className="v-arrow">↓</div>
-              </>
-            )}
-
-            {leadCapture && (
-              <>
-                <div className={`p-row${locked("lead_capture") ? " locked-node" : ""}`}>
-                  <ClickableNode node={leadCapture} onClick={handleNodeClick}>
-                    <div className="p-box" style={{ position: "relative" }}>
-                      {locked("lead_capture") && <LockBadge centered />}
-                      <div className="ico">{NODE_META.lead_capture.emoji}</div>
-                      <div className="lb">{NODE_META.lead_capture.label}</div>
-                      <div className="sb">{NODE_META.lead_capture.description}</div>
-                      <StatusPill status={leadCapture.status} />
-                      {!locked("lead_capture") && <LogBadge nodeKey="lead_capture" />}
-                    </div>
-                  </ClickableNode>
-                </div>
-                <div className="v-arrow">↓</div>
-              </>
-            )}
-
-            {leadNurture && (
-              <>
-                <div className={`p-row${locked("lead_nurture") ? " locked-node" : ""}`}>
-                  <ClickableNode node={leadNurture} onClick={handleNodeClick}>
-                    <div className="p-box" style={{ position: "relative" }}>
-                      {locked("lead_nurture") && <LockBadge centered />}
-                      <div className="ico">💬</div>
-                      <div className="lb">리드 육성</div>
-                      <div className="sb">팔로업 · 설득</div>
-                      <StatusPill status={leadNurture.status} />
-                      {!locked("lead_nurture") && <LogBadge nodeKey="lead_nurture" />}
-                    </div>
-                  </ClickableNode>
-                  <div className="p-arr">+</div>
-                  <div
-                    className={`p-node${locked("lead_nurture") ? " locked-node" : ""}`}
-                    style={{ ["--ng" as string]: locked("lead_nurture") ? "#555" : SC[leadNurture.status], cursor: "pointer" }}
-                    onClick={() => locked("lead_nurture") ? setLockedKey("lead_nurture") : setShowQualified(true)}
-                    role="button"
-                    tabIndex={0}
-                    onKeyDown={(e) => { if (e.key === "Enter") { locked("lead_nurture") ? setLockedKey("lead_nurture") : setShowQualified(true); } }}
-                  >
-                    <div className="p-box" style={{ position: "relative" }}>
-                      {locked("lead_nurture") && <LockBadge centered />}
-                      <div className="ico">{locked("lead_nurture") ? "🔒" : "⭐"}</div>
-                      <div className="lb">유망 리드</div>
-                      <div className="sb">방문 의향 확인</div>
-                      <StatusPill status={leadNurture.status} />
-                    </div>
-                  </div>
-                </div>
-                <div className="v-arrow">↓</div>
-              </>
-            )}
-
-            {newPatient && (
-              <div className={`p-row${locked("new_patient") ? " locked-node" : ""}`}>
-                <div
-                  className="p-merged"
-                  style={{ ["--ng" as string]: SC[newPatient.status], cursor: "pointer", position: "relative" }}
-                  onClick={() => handleNodeClick("new_patient")}
-                  role="button"
-                  tabIndex={0}
-                  onKeyDown={(e) => e.key === "Enter" && handleNodeClick("new_patient")}
-                >
-                  {locked("new_patient") && <LockBadge centered />}
-                  <div className="p-box convert-box" style={{ borderColor: SC[newPatient.status], background: `linear-gradient(135deg,${SB[newPatient.status]},var(--card))` }}>
-                    <div className="lb merge-title" style={{ color: SC[newPatient.status] }}>🏥 약속 방문 → 상담 → 진료</div>
-                    <div className="merge-items">
-                      <div className="merge-item"><div className="mi-ico">🪑</div><div className="mi-lb">내원</div></div>
-                      <div className="merge-item"><div className="mi-ico">🦷</div><div className="mi-lb">상담</div></div>
-                      <div className="merge-item"><div className="mi-ico">✅</div><div className="mi-lb">치료 결정</div></div>
-                    </div>
-                    <div className="star-tag success-tag" style={{ background: SC[newPatient.status] }}>= 신환 획득</div>
-                    {!locked("new_patient") && <LogBadge nodeKey="new_patient" />}
-                  </div>
-                </div>
+        {/* ── Platinum 골드 박스 ── */}
+        <div
+          className="platinum-gold-box"
+          style={{
+            padding: "20px 18px 16px",
+            borderRadius: 16,
+            border: "2px solid var(--gold-border)",
+            background: "linear-gradient(135deg, var(--gold-bg) 0%, var(--gold-bg) 40%, var(--gold-bg) 100%)",
+            boxShadow: "0 0 40px var(--gold-bg), 0 0 80px var(--gold-bg), inset 0 1px 0 var(--gold-border)",
+            position: "relative",
+            overflow: "hidden",
+            cursor: "pointer",
+            transition: "transform 0.2s, box-shadow 0.2s",
+          }}
+          onClick={() => setShowPlatinumUpgrade(true)}
+          onMouseEnter={(e) => {
+            e.currentTarget.style.transform = "translateY(-2px) scale(1.01)";
+            e.currentTarget.style.boxShadow = "0 0 60px var(--gold-border), 0 8px 32px var(--gold-bg), inset 0 1px 0 var(--gold-border)";
+          }}
+          onMouseLeave={(e) => {
+            e.currentTarget.style.transform = "";
+            e.currentTarget.style.boxShadow = "0 0 40px var(--gold-bg), 0 0 80px var(--gold-bg), inset 0 1px 0 var(--gold-border)";
+          }}
+          role="button"
+          tabIndex={0}
+          onKeyDown={(e) => { if (e.key === "Enter") setShowPlatinumUpgrade(true); }}
+        >
+          {/* Animated shimmer sweep */}
+          <div style={{
+            position: "absolute", top: 0, left: "-100%", width: "200%", height: "100%",
+            background: "linear-gradient(90deg, transparent 0%, var(--gold-bg) 25%, var(--gold-bg) 50%, var(--gold-bg) 75%, transparent 100%)",
+            animation: "goldShimmerSweep 4s ease-in-out infinite",
+            pointerEvents: "none",
+          }} />
+          {/* Top border glow */}
+          <div style={{
+            position: "absolute", top: 0, left: 0, right: 0, height: 2,
+            background: "linear-gradient(90deg, transparent, var(--gold), var(--gold-warm), transparent)",
+          }} />
+          {/* Bottom border glow */}
+          <div style={{
+            position: "absolute", bottom: 0, left: 0, right: 0, height: 2,
+            background: "linear-gradient(90deg, transparent, var(--gold-border), transparent)",
+          }} />
+          {/* Main content */}
+          <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 14, position: "relative", zIndex: 1, flexWrap: "wrap" }}>
+            <div style={{
+              width: 48, height: 48, borderRadius: 16,
+              background: "linear-gradient(135deg, var(--gold-border), var(--gold-bg))",
+              border: "1px solid var(--gold-border)",
+              display: "flex", alignItems: "center", justifyContent: "center",
+              fontSize: 28, flexShrink: 0,
+              boxShadow: "0 4px 20px var(--gold-bg)",
+              animation: "floatGlow 3s ease-in-out infinite",
+            }}>👑</div>
+            <div style={{ flex: 1, minWidth: 0 }}>
+              <div style={{ fontSize: 16, fontWeight: 900, color: "var(--gold)", marginBottom: 4, letterSpacing: "-0.3px" }}>
+                신환 전화응대 · 채팅응대 전담
               </div>
-            )}
-
-
-          </div>
-
-          <div className="divider" />
-
-          {/* CS360 Flywheel */}
-          <div className="flywheel-col">
-            <div className="sec-label">고객 관리 360</div>
-            <div className="sec-title">기존 환자 → 평생 환자</div>
-            <div className="sec-desc">한 번 방문한 환자를 반복 방문 + 입소문 자산으로 전환</div>
-            <div className="fw-wrap">
-              <div className="wheel-box" style={{ width: WHEEL, height: WHEEL }}>
-                {/* 궤도 원: 노드 안쪽에 깔리도록 z-index 낮게 */}
-                <div className="wheel-ring" />
-                {/* 노드 간 연결 점선 원 */}
-                <svg className="wheel-connectors" viewBox={`0 0 ${WHEEL} ${WHEEL}`} style={{ position: "absolute", inset: 0, pointerEvents: "none", zIndex: 1 }}>
-                  <circle cx={CX} cy={CY} r={R} fill="none" stroke="rgba(79,156,255,0.08)" strokeWidth="1" strokeDasharray="6 8" />
-                  {/* 화살표 표시: 각 노드 사이 중간 지점에 작은 화살표 */}
-                  {csNodes.map((_, i) => {
-                    const a1 = ((CS_ANGLES[i]! - 90) * Math.PI) / 180;
-                    const a2 = ((CS_ANGLES[(i + 1) % csNodes.length]! - 90) * Math.PI) / 180;
-                    const midAngle = (a1 + a2) / 2 + (i === csNodes.length - 1 ? Math.PI : 0);
-                    const ax = CX + (R + 2) * Math.cos(midAngle);
-                    const ay = CY + (R + 2) * Math.sin(midAngle);
-                    const arrowAngle = midAngle + Math.PI / 2;
-                    return (
-                      <g key={i} transform={`translate(${ax},${ay}) rotate(${(arrowAngle * 180) / Math.PI})`}>
-                        <path d="M-4,-3 L0,4 L4,-3" fill="none" stroke="rgba(79,156,255,0.2)" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
-                      </g>
-                    );
-                  })}
-                </svg>
-                <div className="wheel-center">
-                  <div className="wc-circle">
-                    <div className="wl">CS 360</div>
-                    <div className="wt">평생 환자</div>
-                  </div>
-                </div>
-                {csNodes.map((node, index) => {
-                  const meta     = NODE_META[node.node_key];
-                  const nodeLock = locked(node.node_key);
-                  const color    = nodeLock ? "#555" : SC[node.status];
-                  const angle  = CS_ANGLES[index]!;
-                  const rad    = ((angle - 90) * Math.PI) / 180;
-                  const x      = CX + R * Math.cos(rad) - SW;
-                  const y      = CY + R * Math.sin(rad) - SH;
-                  const count  = logCountByKey[node.node_key] ?? 0;
-
-                  return (
-                    <div
-                      key={node.id}
-                      className={`w-seg${nodeLock ? " locked-seg" : ""}`}
-                      style={{
-                        ["--sc" as string]: color,
-                        left: `${x}px`,
-                        top: `${y}px`,
-                        cursor: "pointer",
-                      }}
-                      onClick={() => handleNodeClick(node.node_key)}
-                      role="button"
-                      tabIndex={0}
-                      aria-label={`${meta.label} — ${nodeLock ? "잠금" : SL[node.status]}`}
-                      onKeyDown={(e) => e.key === "Enter" && handleNodeClick(node.node_key)}
-                    >
-                      <div className="w-dot" style={{
-                        borderColor: color,
-                        borderStyle: nodeLock ? "dashed" : "solid",
-                        boxShadow: nodeLock ? "none" : `0 0 20px -4px ${color}`,
-                        background: nodeLock ? "rgba(255,255,255,0.03)" : SB[node.status],
-                        position: "relative",
-                      }}>
-                        {nodeLock ? "🔒" : meta.emoji}
-                        {!nodeLock && count > 0 && (
-                          <span style={{
-                            position: "absolute", top: -4, right: -4,
-                            width: 16, height: 16, borderRadius: "50%",
-                            background: "var(--gP)", color: "#081018",
-                            fontSize: 9, fontWeight: 900,
-                            display: "flex", alignItems: "center", justifyContent: "center",
-                            border: "2px solid var(--bg)",
-                          }}>
-                            {count}
-                          </span>
-                        )}
-                      </div>
-                      <div className="wsl">{meta.label}</div>
-                      <div className="wss">{meta.description}</div>
-                      {nodeLock ? (
-                        <span className="w-status-pill" style={{ color: "#666", borderColor: "rgba(255,255,255,0.08)" }}>
-                          🔒 잠금
-                        </span>
-                      ) : (
-                        <span className="w-status-pill" style={{ color, borderColor: `${color}33` }}>
-                          {SL[node.status]}
-                        </span>
-                      )}
-                    </div>
-                  );
-                })}
-              </div>
-              <div className="return-loop">↩ 커뮤니티(리뷰·소개) → 인지확대 파이프라인으로 순환</div>
-
-              {/* ── Platinum 골드 박스 ── */}
-              <div
-                className="platinum-gold-box"
-                style={{
-                  marginTop: "auto",
-                  padding: "20px 18px 16px",
-                  borderRadius: 16,
-                  border: "2px solid rgba(255,193,7,0.5)",
-                  background: "linear-gradient(135deg, rgba(255,193,7,0.1) 0%, rgba(255,152,0,0.04) 40%, rgba(255,193,7,0.1) 100%)",
-                  boxShadow: "0 0 40px rgba(255,193,7,0.1), 0 0 80px rgba(255,193,7,0.05), inset 0 1px 0 rgba(255,193,7,0.15)",
-                  position: "relative",
-                  overflow: "hidden",
-                  cursor: "pointer",
-                  transition: "transform 0.2s, box-shadow 0.2s",
-                }}
-                onClick={() => setShowPlatinumUpgrade(true)}
-                onMouseEnter={(e) => {
-                  e.currentTarget.style.transform = "translateY(-2px) scale(1.01)";
-                  e.currentTarget.style.boxShadow = "0 0 60px rgba(255,193,7,0.18), 0 8px 32px rgba(255,193,7,0.1), inset 0 1px 0 rgba(255,193,7,0.2)";
-                }}
-                onMouseLeave={(e) => {
-                  e.currentTarget.style.transform = "";
-                  e.currentTarget.style.boxShadow = "0 0 40px rgba(255,193,7,0.1), 0 0 80px rgba(255,193,7,0.05), inset 0 1px 0 rgba(255,193,7,0.15)";
-                }}
-                role="button"
-                tabIndex={0}
-                onKeyDown={(e) => { if (e.key === "Enter") setShowPlatinumUpgrade(true); }}
-              >
-                {/* Animated shimmer sweep */}
-                <div style={{
-                  position: "absolute", top: 0, left: "-100%", width: "200%", height: "100%",
-                  background: "linear-gradient(90deg, transparent 0%, rgba(255,193,7,0.06) 25%, rgba(255,193,7,0.12) 50%, rgba(255,193,7,0.06) 75%, transparent 100%)",
-                  animation: "goldShimmerSweep 4s ease-in-out infinite",
-                  pointerEvents: "none",
-                }} />
-                {/* Top border glow */}
-                <div style={{
-                  position: "absolute", top: 0, left: 0, right: 0, height: 2,
-                  background: "linear-gradient(90deg, transparent, rgba(255,193,7,0.7), rgba(255,152,0,0.5), transparent)",
-                }} />
-                {/* Bottom border glow */}
-                <div style={{
-                  position: "absolute", bottom: 0, left: 0, right: 0, height: 2,
-                  background: "linear-gradient(90deg, transparent, rgba(255,193,7,0.4), transparent)",
-                }} />
-                {/* Main content */}
-                <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 14, position: "relative", zIndex: 1, flexWrap: "wrap" }}>
-                  <div style={{
-                    width: 48, height: 48, borderRadius: 14,
-                    background: "linear-gradient(135deg, rgba(255,193,7,0.25), rgba(255,152,0,0.15))",
-                    border: "1px solid rgba(255,193,7,0.4)",
-                    display: "flex", alignItems: "center", justifyContent: "center",
-                    fontSize: 28, flexShrink: 0,
-                    boxShadow: "0 4px 20px rgba(255,193,7,0.15)",
-                    animation: "floatGlow 3s ease-in-out infinite",
-                  }}>👑</div>
-                  <div style={{ flex: 1, minWidth: 0 }}>
-                    <div style={{ fontSize: 16, fontWeight: 900, color: "#FFC107", marginBottom: 4, letterSpacing: "-0.3px" }}>
-                      신환 전화응대 · 채팅응대 전담
-                    </div>
-                    <div style={{ fontSize: 12, color: "var(--tsub)", lineHeight: 1.6 }}>
-                      전문 상담사가 전화·채팅을 직접 응대하여 <strong style={{ color: "#FFC107" }}>신환 유입을 책임</strong>집니다
-                    </div>
-                  </div>
-                  <div style={{
-                    padding: "6px 14px", borderRadius: 100,
-                    background: "linear-gradient(135deg, #FFC107, #FF9800)",
-                    color: "#1a1a2e", fontSize: 12, fontWeight: 900, flexShrink: 0,
-                    letterSpacing: "0.5px", boxShadow: "0 2px 12px rgba(255,193,7,0.3)",
-                  }}>Platinum</div>
-                </div>
-                {/* Feature pills */}
-                <div style={{ display: "flex", gap: 6, flexWrap: "wrap", position: "relative", zIndex: 1 }}>
-                  {[
-                    { icon: "📞", label: "전화 응대" },
-                    { icon: "💬", label: "채팅 응대" },
-                    { icon: "🏥", label: "신환 책임제" },
-                    { icon: "📊", label: "VIP 리포트" },
-                  ].map((f) => (
-                    <span key={f.label} style={{
-                      display: "inline-flex", alignItems: "center", gap: 3,
-                      padding: "4px 8px", borderRadius: 100, fontSize: 10, fontWeight: 700,
-                      background: "rgba(255,193,7,0.1)", color: "#FFC107",
-                      border: "1px solid rgba(255,193,7,0.2)",
-                    }}>{f.icon} {f.label}</span>
-                  ))}
-                </div>
-                {/* CTA hint */}
-                <div style={{ marginTop: 10, fontSize: 11, color: "rgba(255,193,7,0.6)", fontWeight: 600, textAlign: "center", position: "relative", zIndex: 1 }}>
-                  클릭하여 자세히 알아보기 →
-                </div>
+              <div style={{ fontSize: 12, color: "var(--tsub)", lineHeight: 1.6 }}>
+                전문 상담사가 전화·채팅을 직접 응대하여 <strong style={{ color: "var(--gold)" }}>신환 유입을 책임</strong>집니다
               </div>
             </div>
+            <div style={{
+              padding: "6px 14px", borderRadius: 100,
+              background: "linear-gradient(135deg, var(--gold), var(--gold-warm))",
+              color: "#1a1a2e", fontSize: 12, fontWeight: 900, flexShrink: 0,
+              letterSpacing: "0.5px", boxShadow: "0 2px 12px var(--gold-border)",
+            }}>Platinum</div>
+          </div>
+          {/* Feature pills */}
+          <div style={{ display: "flex", gap: 6, flexWrap: "wrap", position: "relative", zIndex: 1 }}>
+            {[
+              { icon: "📞", label: "전화 응대" },
+              { icon: "💬", label: "채팅 응대" },
+              { icon: "🏥", label: "신환 책임제" },
+              { icon: "📊", label: "VIP 리포트" },
+            ].map((f) => (
+              <span key={f.label} style={{
+                display: "inline-flex", alignItems: "center", gap: 3,
+                padding: "4px 8px", borderRadius: 100, fontSize: 10, fontWeight: 700,
+                background: "var(--gold-bg)", color: "var(--gold)",
+                border: "1px solid var(--gold-border)",
+              }}>{f.icon} {f.label}</span>
+            ))}
+          </div>
+          {/* CTA hint */}
+          <div style={{ marginTop: 10, fontSize: 11, color: "var(--gold-border)", fontWeight: 600, textAlign: "center", position: "relative", zIndex: 1 }}>
+            클릭하여 자세히 알아보기 →
           </div>
         </div>
 
@@ -992,7 +833,7 @@ export function DashboardCanvas({ client, nodes, logs }: Props) {
                   return (
                     <li
                       key={log.id}
-                      style={{ padding: "12px 0", borderBottom: "1px solid rgba(255,255,255,0.04)", cursor: "pointer", display: "flex", alignItems: "flex-start", gap: 12, transition: "background 0.15s", borderRadius: 8 }}
+                      style={{ padding: "12px 0", borderBottom: "1px solid var(--overlay-3)", cursor: "pointer", display: "flex", alignItems: "flex-start", gap: 12, transition: "background 0.15s", borderRadius: 8 }}
                       onClick={() => setSelectedKey(log.node_key)}
                       role="button"
                       tabIndex={0}
@@ -1028,7 +869,7 @@ export function DashboardCanvas({ client, nodes, logs }: Props) {
                   style={{
                     display: "block", width: "100%", marginTop: 12, padding: "10px 0",
                     textAlign: "center", fontSize: 13, fontWeight: 700, color: "var(--gP)",
-                    background: "rgba(79,156,255,0.06)", border: "1px solid rgba(79,156,255,0.12)",
+                    background: "var(--accent-bg)", border: "1px solid var(--accent-border)",
                     borderRadius: 10, cursor: "pointer", transition: "background 0.15s",
                   }}
                 >
@@ -1042,9 +883,9 @@ export function DashboardCanvas({ client, nodes, logs }: Props) {
         {/* ── Educational tip: CRM ── */}
         <div style={{
           padding: "16px 20px",
-          background: "rgba(255,255,255,0.02)",
+          background: "var(--overlay-1)",
           border: "1px solid var(--border)",
-          borderRadius: 14,
+          borderRadius: 16,
         }}>
           <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 12 }}>
             <span style={{ fontSize: 15 }}>💡</span>
@@ -1120,12 +961,12 @@ function PackageComparisonTable({ currentTier }: { currentTier: PackageTier }) {
                   ? `2px solid ${info.color}`
                   : isPopular
                     ? `2px solid ${info.color}80`
-                    : "1px solid rgba(255,255,255,0.08)",
+                    : "1px solid var(--overlay-4)",
                 background: isCurrent
-                  ? `linear-gradient(168deg, ${info.color}15 0%, ${info.color}06 40%, rgba(255,255,255,0.02) 100%)`
+                  ? `linear-gradient(168deg, ${info.color}15 0%, ${info.color}06 40%, var(--overlay-1) 100%)`
                   : isPopular
-                    ? `linear-gradient(168deg, ${info.color}0c 0%, rgba(255,255,255,0.02) 60%)`
-                    : "rgba(255,255,255,0.02)",
+                    ? `linear-gradient(168deg, ${info.color}0c 0%, var(--overlay-1) 60%)`
+                    : "var(--overlay-1)",
                 overflow: "hidden",
                 position: "relative",
                 transition: "transform 0.3s, box-shadow 0.3s",
@@ -1251,7 +1092,7 @@ function PackageComparisonTable({ currentTier }: { currentTier: PackageTier }) {
                     <span style={{ fontSize: 11, color: "var(--tdim)", marginLeft: 1 }}>/월</span>
                   </div>
 
-                  {/* Guarantee — fixed height for cross-card alignment */}
+                  {/* Guarantee */}
                   <p style={{
                     fontSize: 11,
                     color: info.guarantee ? info.color : "transparent",
@@ -1259,11 +1100,28 @@ function PackageComparisonTable({ currentTier }: { currentTier: PackageTier }) {
                     marginBottom: 0,
                     fontWeight: 600,
                     opacity: 0.85,
-                    height: 48,
-                    overflow: "hidden",
+                    minHeight: info.priceNote ? 16 : 48,
                   }}>
                     {info.guarantee || "\u00A0"}
                   </p>
+
+                  {/* Price note callout */}
+                  {info.priceNote && (
+                    <div style={{
+                      marginTop: 8,
+                      padding: "8px 10px",
+                      borderRadius: 8,
+                      background: `${info.color}0d`,
+                      border: `1px solid ${info.color}22`,
+                      fontSize: 10,
+                      lineHeight: 1.5,
+                      color: "var(--tsub)",
+                      whiteSpace: "pre-line",
+                    }}>
+                      <span style={{ fontSize: 11, marginRight: 4 }}>💡</span>
+                      {info.priceNote}
+                    </div>
+                  )}
                 </div>
               </div>
 
@@ -1340,7 +1198,7 @@ function PackageComparisonTable({ currentTier }: { currentTier: PackageTier }) {
                 height: 1,
                 background: isCurrent
                   ? `linear-gradient(90deg, transparent, ${info.color}30, transparent)`
-                  : "rgba(255,255,255,0.06)",
+                  : "var(--overlay-3)",
                 margin: "0 22px",
               }} />
 
@@ -1403,7 +1261,7 @@ function PackageComparisonTable({ currentTier }: { currentTier: PackageTier }) {
                           borderRadius: "50%",
                           fontSize: 10,
                           flexShrink: 0,
-                          background: included ? `${info.color}1a` : "rgba(255,255,255,0.04)",
+                          background: included ? `${info.color}1a` : "var(--overlay-3)",
                           color: included ? info.color : "var(--tdim)",
                           fontWeight: 900,
                         }}>

@@ -1,10 +1,11 @@
 "use client";
 
-import { useState, useEffect, useRef, ReactNode } from "react";
+import React, { useState, useEffect, useRef, ReactNode } from "react";
 import Link from "next/link";
+import { GlobalNav } from "@/components/layout/GlobalNav";
 
 /* ─────────────────────────────────────────────
-   Style tokens – match knockai.click exactly
+   Style tokens
    ───────────────────────────────────────────── */
 const T = {
   bg:        "var(--bg,        #060611)",
@@ -17,15 +18,18 @@ const T = {
   yellow:    "var(--yellow,    #f9a825)",
   yellowDim: "var(--yellow-dim,rgba(249,168,37,.12))",
   blue:      "var(--blue,      #4a9eff)",
-  gw:        "var(--gw,        rgba(255,255,255,.06))",   // glass-white
+  gw:        "var(--gw,        rgba(255,255,255,.06))",
   text:      "var(--text,      #eaeaef)",
   muted:     "var(--muted,     #72728a)",
   dim:       "var(--dim,       #3a3a52)",
   border:    "var(--border,    #1e1e32)",
 };
 
+const NAVER = "#03C75A";
+const YT_RED = "#ff0000";
+
 /* ─────────────────────────────────────────────
-   Tiny helpers
+   Helpers
    ───────────────────────────────────────────── */
 function useFadeIn(threshold = 0.15) {
   const ref = useRef<HTMLDivElement>(null);
@@ -40,11 +44,11 @@ function useFadeIn(threshold = 0.15) {
   return { ref, style: { opacity: visible ? 1 : 0, transform: visible ? "none" : "translateY(24px)", transition: "all .55s cubic-bezier(.22,1,.36,1)" } as React.CSSProperties };
 }
 
-function Badge({ children, color = T.accent, bg }: { children: ReactNode; color?: string; bg?: string }) {
+function Badge({ children, color = T.accent }: { children: ReactNode; color?: string }) {
   return (
     <span style={{
       display: "inline-flex", alignItems: "center", gap: 5,
-      background: bg || `${color}18`, border: `1px solid ${color}30`,
+      background: `${color}18`, border: `1px solid ${color}30`,
       color, padding: "4px 12px", borderRadius: 99, fontSize: 12, fontWeight: 600,
       whiteSpace: "nowrap",
     }}>{children}</span>
@@ -76,197 +80,790 @@ function RankDot({ rank }: { rank: number }) {
   );
 }
 
+function TierBadge({ tier, extra }: { tier: "basic" | "premium" | "platinum"; extra?: string }) {
+  const label = tier === "basic" ? "Basic" : tier === "premium" ? "Premium" : "Platinum";
+  const isHighTier = tier === "premium" || tier === "platinum";
+  const colors: Record<string, { bg: string; color: string; border?: string }> = {
+    basic: { bg: `${T.blue}20`, color: T.blue, border: `1px solid ${T.blue}40` },
+    premium: { bg: "linear-gradient(135deg, #f9a825, #e68a00)", color: "#fff" },
+    platinum: { bg: "linear-gradient(135deg, #e94560, #c73a54)", color: "#fff" },
+  };
+  const c = colors[tier];
+  return (
+    <span style={{
+      display: "inline-flex", alignItems: "center", gap: 4,
+      padding: "3px 10px", borderRadius: 6, fontSize: 11, fontWeight: 800, letterSpacing: 0.5,
+      color: c.color,
+      background: c.bg,
+      border: c.border || "none",
+    }}>
+      {isHighTier && "⭐ "}{label}{extra ? ` + ${extra}` : ""}
+    </span>
+  );
+}
+
+function NaverLink({ url }: { url: string }) {
+  return (
+    <a
+      href={url}
+      target="_blank"
+      rel="noopener noreferrer"
+      onClick={e => e.stopPropagation()}
+      style={{
+        display: "inline-flex", alignItems: "center", gap: 6,
+        color: NAVER, fontSize: 12, fontWeight: 600, textDecoration: "none",
+        padding: "6px 12px", borderRadius: 8,
+        background: `${NAVER}12`, border: `1px solid ${NAVER}30`,
+        transition: "background .2s",
+      }}
+      onMouseEnter={e => (e.currentTarget.style.background = `${NAVER}25`)}
+      onMouseLeave={e => (e.currentTarget.style.background = `${NAVER}12`)}
+    >
+      <span style={{
+        width: 18, height: 18, borderRadius: 4, background: NAVER,
+        display: "inline-flex", alignItems: "center", justifyContent: "center",
+        color: "#fff", fontSize: 11, fontWeight: 900,
+      }}>N</span>
+      네이버 플레이스에서 확인 →
+    </a>
+  );
+}
+
+function StatBox({ label, value, sub, color }: { label: string; value: string; sub?: string; color?: string }) {
+  return (
+    <div style={{ background: T.gw, borderRadius: 10, padding: "10px 12px" }}>
+      <div style={{ fontSize: 10, color: T.muted }}>{label}</div>
+      <div style={{ fontSize: 14, fontWeight: 700, color: color || T.text, marginTop: 2 }}>{value}</div>
+      {sub && <div style={{ fontSize: 10, color: T.green, marginTop: 1 }}>{sub}</div>}
+    </div>
+  );
+}
+
 /* ─────────────────────────────────────────────
-   Data
+   Data – 4 Real Cases
    ───────────────────────────────────────────── */
-const CASES = [
+
+interface ClientCase {
+  id: string;
+  name: string;
+  area: string;
+  category: string;
+  keyword: string;
+  tier: "basic" | "premium" | "platinum";
+  tierExtra?: string;
+  naverUrl: string;
+  capability: "seo_mastery" | "consistent_dominance" | "automation" | "content_growth";
+  capabilityIcon: string;
+  capabilityLabel: string;
+  capabilityQuote: string;
+  accentColor: string;
+  rank?: number;
+  totalBiz?: number;
+  monthlySearch?: number;
+  period: string;
+  highlights: string[];
+  tracking?: Array<{ d: string; r: number }>;
+  takeoverIndex?: number;
+  proofImage?: string;
+  automationFeatures?: string[];
+  youtube?: {
+    channelName: string;
+    subs: string;
+    totalViews: string;
+    years: number;
+    recent28d: {
+      views: string;
+      viewsSub: string;
+      watchHours: string;
+      newSubs: string;
+      revenue: string;
+    };
+    growth: string;
+    mediaCredits: string[];
+  };
+}
+
+const CLIENT_CASES: ClientCase[] = [
+  {
+    id: "jeju",
+    name: "제주팔팔의원",
+    area: "제주시",
+    category: "정형외과",
+    keyword: "제주 정형외과",
+    tier: "basic",
+    naverUrl: "https://naver.me/F3TGJPtu",
+    capability: "consistent_dominance",
+    capabilityIcon: "👑",
+    capabilityLabel: "1위 독점 유지",
+    capabilityQuote: "타 업체 5개월간 5~8위 정체 → 노크 이관 후 1위 독점",
+    accentColor: T.green,
+    rank: 1,
+    totalBiz: 169,
+    monthlySearch: 1730,
+    period: "타 업체 5개월 운영 → 노크 이관",
+    highlights: ["타 업체 5개월간 5~8위 정체 → 노크 이관 후 1위", "169개 업체 부동의 1위", "월 검색량 1,730건"],
+    proofImage: "/references/jeju88-proof.png",
+    tracking: [
+      // 3월: 1위 독점
+      { d: "03.22", r: 1 }, { d: "03.21", r: 1 }, { d: "03.20", r: 1 }, { d: "03.19", r: 1 },
+      { d: "03.18", r: 1 }, { d: "03.17", r: 1 }, { d: "03.16", r: 1 }, { d: "03.15", r: 1 },
+      { d: "03.14", r: 1 }, { d: "03.13", r: 1 }, { d: "03.12", r: 1 },
+      { d: "03.11", r: 1 }, { d: "03.10", r: 1 }, { d: "03.09", r: 1 }, { d: "03.08", r: 1 },
+      { d: "03.07", r: 1 }, { d: "03.06", r: 1 }, { d: "03.05", r: 1 }, { d: "03.04", r: 1 },
+      { d: "03.03", r: 1 }, { d: "03.02", r: 1 },
+      // 3~2월: 1위 유지
+      { d: "03.01", r: 1 }, { d: "02.28", r: 1 }, { d: "02.27", r: 1 }, { d: "02.26", r: 1 },
+      { d: "02.25", r: 1 }, { d: "02.24", r: 1 }, { d: "02.23", r: 1 }, { d: "02.22", r: 1 },
+      { d: "02.21", r: 1 }, { d: "02.20", r: 1 }, { d: "02.19", r: 1 },
+      { d: "02.18", r: 1 }, { d: "02.17", r: 1 }, { d: "02.16", r: 1 }, { d: "02.15", r: 1 },
+      { d: "02.14", r: 1 }, { d: "02.13", r: 2 }, { d: "02.12", r: 2 }, { d: "02.11", r: 2 },
+      { d: "02.10", r: 2 }, { d: "02.09", r: 2 }, { d: "02.08", r: 2 },
+      { d: "02.07", r: 2 }, { d: "02.06", r: 2 }, { d: "02.05", r: 2 }, { d: "02.04", r: 2 },
+      { d: "02.03", r: 2 }, { d: "02.02", r: 2 }, { d: "02.01", r: 2 },
+      // 1월: 1~2위
+      { d: "01.31", r: 2 }, { d: "01.30", r: 2 }, { d: "01.29", r: 1 },
+      { d: "01.28", r: 1 }, { d: "01.27", r: 1 }, { d: "01.26", r: 1 }, { d: "01.25", r: 2 },
+      { d: "01.24", r: 2 }, { d: "01.23", r: 2 }, { d: "01.22", r: 2 }, { d: "01.21", r: 1 },
+      { d: "01.20", r: 1 }, { d: "01.19", r: 1 }, { d: "01.18", r: 1 },
+      { d: "01.17", r: 1 }, { d: "01.16", r: 1 }, { d: "01.15", r: 1 }, { d: "01.14", r: 1 },
+      { d: "01.13", r: 1 }, { d: "01.12", r: 1 }, { d: "01.11", r: 1 }, { d: "01.10", r: 2 },
+      { d: "01.09", r: 2 }, { d: "01.08", r: 2 }, { d: "01.07", r: 2 },
+      { d: "01.06", r: 2 }, { d: "01.05", r: 2 }, { d: "01.04", r: 2 }, { d: "01.03", r: 2 },
+      { d: "01.02", r: 2 }, { d: "01.01", r: 2 },
+      // 12월: 1~3위
+      { d: "12.31", r: 2 }, { d: "12.30", r: 2 }, { d: "12.29", r: 2 }, { d: "12.28", r: 2 },
+      { d: "12.27", r: 2 }, { d: "12.26", r: 2 }, { d: "12.25", r: 2 }, { d: "12.24", r: 2 },
+      { d: "12.23", r: 2 }, { d: "12.22", r: 2 }, { d: "12.21", r: 2 }, { d: "12.20", r: 2 },
+      { d: "12.19", r: 2 }, { d: "12.18", r: 3 }, { d: "12.17", r: 3 }, { d: "12.16", r: 3 },
+      { d: "12.15", r: 2 }, { d: "12.14", r: 2 }, { d: "12.13", r: 2 }, { d: "12.12", r: 2 },
+      { d: "12.11", r: 2 }, { d: "12.10", r: 2 }, { d: "12.09", r: 2 }, { d: "12.08", r: 2 },
+      { d: "12.07", r: 2 }, { d: "12.06", r: 1 }, { d: "12.05", r: 2 },
+      { d: "12.04", r: 2 }, { d: "12.03", r: 2 }, { d: "12.02", r: 2 }, { d: "12.01", r: 2 },
+      // 11월: 노크 이관 후 2~4위
+      { d: "11.30", r: 2 }, { d: "11.29", r: 2 }, { d: "11.28", r: 2 }, { d: "11.27", r: 3 },
+      { d: "11.26", r: 3 }, { d: "11.25", r: 3 }, { d: "11.24", r: 4 },
+    ],
+    takeoverIndex: 100,
+  },
   {
     id: "noh",
     name: "노내과의원",
     area: "광명시",
     category: "내과",
     keyword: "광명 내과",
-    rank: 1,
+    tier: "basic",
+    naverUrl: "https://naver.me/xuca2M07",
+    capability: "seo_mastery",
+    capabilityIcon: "🎯",
+    capabilityLabel: "순위 최적화",
+    capabilityQuote: "162위 → 2달 이내 3위 진입",
+    accentColor: T.yellow,
+    rank: 3,
     totalBiz: 481,
     monthlySearch: 1040,
     period: "2025.11 ~ 현재",
-    highlights: ["1위 달성", "키워드 5개 동시 관리", "481개 업체 중 최상위"],
+    highlights: ["162위 → 3위, 2달 이내", "순위 조절 가능한 실력", "481개 업체 중 상위"],
+    proofImage: "/references/noh-proof.png",
     tracking: [
-      { d: "03-21", r: 3 }, { d: "03-20", r: 3 }, { d: "03-19", r: 3 },
-      { d: "03-18", r: 3 }, { d: "03-17", r: 3 }, { d: "03-16", r: 3 },
-      { d: "03-10", r: 2 }, { d: "03-09", r: 2 }, { d: "03-08", r: 1 },
-      { d: "03-07", r: 1 }, { d: "03-05", r: 1 }, { d: "03-04", r: 1 },
+      // 3월: 1~3위 안정권
+      { d: "03.22", r: 3 }, { d: "03.21", r: 3 }, { d: "03.20", r: 3 }, { d: "03.19", r: 3 },
+      { d: "03.18", r: 3 }, { d: "03.17", r: 3 }, { d: "03.16", r: 3 }, { d: "03.15", r: 3 },
+      { d: "03.14", r: 3 }, { d: "03.13", r: 3 }, { d: "03.12", r: 3 },
+      { d: "03.11", r: 2 }, { d: "03.10", r: 2 }, { d: "03.09", r: 2 }, { d: "03.08", r: 1 },
+      { d: "03.07", r: 1 }, { d: "03.06", r: 1 }, { d: "03.05", r: 1 }, { d: "03.04", r: 1 },
+      { d: "03.03", r: 1 }, { d: "03.02", r: 1 },
+      // 3~2월: 1위 → 3위 유지
+      { d: "03.01", r: 1 }, { d: "02.28", r: 1 }, { d: "02.27", r: 1 }, { d: "02.26", r: 1 },
+      { d: "02.25", r: 1 }, { d: "02.24", r: 1 }, { d: "02.23", r: 1 }, { d: "02.22", r: 1 },
+      { d: "02.21", r: 3 }, { d: "02.20", r: 3 }, { d: "02.19", r: 3 },
+      { d: "02.18", r: 3 }, { d: "02.17", r: 3 }, { d: "02.16", r: 4 }, { d: "02.15", r: 4 },
+      { d: "02.14", r: 4 }, { d: "02.13", r: 4 }, { d: "02.12", r: 5 }, { d: "02.11", r: 5 },
+      { d: "02.10", r: 5 }, { d: "02.09", r: 5 }, { d: "02.08", r: 6 },
+      { d: "02.07", r: 6 }, { d: "02.06", r: 6 }, { d: "02.05", r: 7 }, { d: "02.04", r: 7 },
+      { d: "02.03", r: 6 }, { d: "02.02", r: 5 }, { d: "02.01", r: 5 },
+      // 1월: 42위 → 3위 (급속 상승)
+      { d: "01.31", r: 4 }, { d: "01.30", r: 3 }, { d: "01.29", r: 3 },
+      { d: "01.28", r: 3 }, { d: "01.27", r: 3 }, { d: "01.26", r: 4 }, { d: "01.25", r: 6 },
+      { d: "01.24", r: 10 }, { d: "01.23", r: 19 }, { d: "01.22", r: 19 }, { d: "01.21", r: 19 },
+      { d: "01.20", r: 17 }, { d: "01.19", r: 17 }, { d: "01.18", r: 15 },
+      { d: "01.17", r: 13 }, { d: "01.16", r: 13 }, { d: "01.15", r: 13 }, { d: "01.14", r: 13 },
+      { d: "01.13", r: 15 }, { d: "01.12", r: 16 }, { d: "01.11", r: 20 }, { d: "01.10", r: 29 },
+      { d: "01.09", r: 35 }, { d: "01.08", r: 38 }, { d: "01.07", r: 42 },
+      { d: "01.06", r: 43 }, { d: "01.05", r: 41 }, { d: "01.04", r: 40 }, { d: "01.03", r: 40 },
+      { d: "01.02", r: 40 }, { d: "01.01", r: 42 },
+      // 12월: 42~49위대 (중간 등락)
+      { d: "12.31", r: 42 }, { d: "12.30", r: 42 }, { d: "12.29", r: 43 }, { d: "12.28", r: 43 },
+      { d: "12.27", r: 45 }, { d: "12.26", r: 45 }, { d: "12.25", r: 45 }, { d: "12.24", r: 45 },
+      { d: "12.23", r: 48 }, { d: "12.22", r: 48 }, { d: "12.21", r: 47 }, { d: "12.20", r: 47 },
+      { d: "12.19", r: 48 }, { d: "12.18", r: 48 }, { d: "12.17", r: 49 }, { d: "12.16", r: 42 },
+      { d: "12.15", r: 42 }, { d: "12.14", r: 40 }, { d: "12.13", r: 35 }, { d: "12.12", r: 32 },
+      { d: "12.11", r: 32 }, { d: "12.10", r: 30 }, { d: "12.09", r: 32 }, { d: "12.08", r: 36 },
+      { d: "12.07", r: 37 }, { d: "12.06", r: 37 }, { d: "12.05", r: 40 },
+      { d: "12.04", r: 42 }, { d: "12.03", r: 43 }, { d: "12.02", r: 43 }, { d: "12.01", r: 44 },
+      // 11월: 162위에서 시작 (11.27)
+      { d: "11.30", r: 44 }, { d: "11.29", r: 47 }, { d: "11.28", r: 48 },
+      { d: "11.27", r: 162 },
     ],
   },
   {
-    id: "jeju",
-    name: "인체발란의원",
-    area: "제주시",
-    category: "정형외과",
-    keyword: "제주 정형외과",
-    rank: 1,
-    totalBiz: 169,
-    monthlySearch: 1730,
-    period: "2025.11 ~ 현재",
-    highlights: ["1위 30일+ 연속", "169개 업체 부동의 1위"],
-    tracking: [
-      { d: "03-21", r: 1 }, { d: "03-20", r: 1 }, { d: "03-19", r: 1 },
-      { d: "03-18", r: 1 }, { d: "03-17", r: 1 }, { d: "03-16", r: 1 },
-      { d: "03-15", r: 1 }, { d: "03-14", r: 1 }, { d: "03-13", r: 1 },
-      { d: "03-12", r: 1 }, { d: "03-11", r: 1 }, { d: "03-10", r: 1 },
-    ],
-  },
-  {
-    id: "yangju",
-    name: "양주이지치과의원",
-    area: "양주시",
-    category: "치과",
-    keyword: "양주치과",
-    rank: 3,
-    totalBiz: 385,
-    monthlySearch: 1530,
+    id: "iheal",
+    name: "아이힐동물병원",
+    area: "강남구",
+    category: "동물병원",
+    keyword: "강남 동물병원",
+    tier: "premium",
+    naverUrl: "",
+    capability: "automation",
+    capabilityIcon: "⚙️",
+    capabilityLabel: "자동화 & 채널 셋업",
+    capabilityQuote: "카카오톡 채널부터 업무 자동화까지",
+    accentColor: T.blue,
     period: "2026.03 ~ 현재",
-    highlights: ["Top 5 안착", "385개 업체 경쟁"],
-    tracking: [
-      { d: "03-21", r: 3 }, { d: "03-20", r: 5 }, { d: "03-19", r: 6 },
-      { d: "03-18", r: 6 }, { d: "03-17", r: 5 }, { d: "03-16", r: 5 },
-      { d: "03-15", r: 3 }, { d: "03-14", r: 6 }, { d: "03-13", r: 6 },
-      { d: "03-12", r: 6 },
-    ],
+    highlights: ["카카오톡 채널 구축", "시즌별 자동 발송", "Premium 풀서비스"],
+    automationFeatures: [
+      { label: "카카오톡 채널 개설 & 자동응답 설정", done: true },
+      { label: "봄철 슬개골 주의보 카톡 자동 발송", done: true },
+      { label: "예약 리마인드 알림 자동화", done: true },
+      { label: "시술 후 팔로업 문자 자동 발송", done: true },
+      { label: "리뷰 요청 자동 발송 시나리오", done: true },
+      { label: "시즌 프로모션 콘텐츠 제작 & 배포", done: true },
+    ] as unknown as string[],
   },
-];
-
-const YOUTUBE = {
-  name: "산부인과TV",
-  subs: "41만",
-  views: "1.56억",
-  years: 5,
-  highlights: ["MBN '쉬는 부부' 협업", "공중파 다수 출연", "국제크리에이터대상 의료부문", "조회수 37% 증가"],
-};
-
-const PACKAGES = [
-  { name: "Entry", price: "50만원/월", note: "순위 상승", guarantee: "순위 상승 보장", color: T.muted },
-  { name: "Basic", price: "100만원/월", note: "5위 개런티", guarantee: "3개월 5위 개런티", color: T.blue },
-  { name: "Standard", price: "200만원/월", note: "홈페이지 + 자동화", guarantee: "5위 유지 보장", color: T.green },
-  { name: "Premium", price: "300만원/월", note: "광고 + 업셀", guarantee: "성과 트래킹", color: T.yellow },
-  { name: "Platinum", price: "400만원+α", note: "신환 책임", guarantee: "성과 기반 과금", color: T.accent, featured: true },
+  {
+    id: "hyesung",
+    name: "혜성산부인과",
+    area: "동두천시",
+    category: "산부인과",
+    keyword: "동두천 산부인과",
+    tier: "premium",
+    tierExtra: "Youtube",
+    naverUrl: "https://naver.me/F74Vx2y5",
+    capability: "content_growth",
+    capabilityIcon: "▶",
+    capabilityLabel: "콘텐츠 제작 · 관리 · 성장",
+    capabilityQuote: "41.2만 구독자, 조회수 37% 성장",
+    accentColor: YT_RED,
+    period: "운영 5년+",
+    highlights: ["유튜브 41.2만 구독자", "조회수 37% 증가", "MBN·MBC 다수 협업", "국제크리에이터대상 의료부문"],
+    youtube: {
+      channelName: "산부인과TV",
+      subs: "41.2만",
+      totalViews: "1.56억",
+      years: 5,
+      recent28d: {
+        views: "132.9만",
+        viewsSub: "평소보다 24.9만 높음",
+        watchHours: "1.7만",
+        newSubs: "+877",
+        revenue: "$552",
+      },
+      growth: "37%",
+      mediaCredits: [
+        "MBN 쉬는 부부 협업",
+        "MBN 끝내주는 부부 협업",
+        "MBC 몸신 협업",
+        "국제크리에이터 대상 의료부문 대상",
+      ],
+    },
+  },
 ];
 
 /* ─────────────────────────────────────────────
-   Sub-components
+   Capability-specific Sections
    ───────────────────────────────────────────── */
-function CaseCard({ c }: { c: typeof CASES[0] }) {
-  const [open, setOpen] = useState(false);
-  const fade = useFadeIn();
 
+function AutomationChecklist({ features }: { features: Array<{ label: string; done: boolean }> }) {
   return (
-    <div ref={fade.ref} style={{ ...fade.style }}>
-      <div
-        onClick={() => setOpen(!open)}
-        style={{
-          background: T.bgCard, border: `1px solid ${T.border}`, borderRadius: 16,
-          padding: "28px 28px 24px", cursor: "pointer", position: "relative", overflow: "hidden",
-          transition: "border-color .25s",
-        }}
-        onMouseEnter={e => (e.currentTarget.style.borderColor = `${T.accent}44`)}
-        onMouseLeave={e => (e.currentTarget.style.borderColor = T.border)}
-      >
-        {/* top accent line */}
-        <div style={{ position: "absolute", inset: "0 0 auto 0", height: 3, background: c.rank === 1 ? T.green : c.rank <= 3 ? T.yellow : T.accent }} />
-
-        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 12, flexWrap: "wrap" }}>
-          <div>
-            <span style={{ fontSize: 11, color: T.muted, fontWeight: 600, letterSpacing: 1 }}>{c.category} · {c.area}</span>
-            <h3 style={{ fontSize: 20, fontWeight: 800, margin: "4px 0 0", color: T.text }}>{c.name}</h3>
-          </div>
-          <RankDot rank={c.rank} />
+    <div style={{ display: "flex", flexDirection: "column", gap: 8, margin: "16px 0 12px" }}>
+      {features.map((f, i) => (
+        <div key={i} style={{
+          display: "flex", alignItems: "center", gap: 10, padding: "8px 12px",
+          background: T.gw, borderRadius: 10,
+          animation: `fadeSlide .35s ease ${i * 60}ms both`,
+        }}>
+          <span style={{
+            width: 22, height: 22, borderRadius: "50%",
+            background: f.done ? `${T.green}20` : T.gw,
+            border: `2px solid ${f.done ? T.green : T.dim}`,
+            display: "flex", alignItems: "center", justifyContent: "center",
+            fontSize: 12, color: T.green,
+          }}>{f.done ? "✓" : ""}</span>
+          <span style={{ fontSize: 13, fontWeight: 600, color: T.text }}>{f.label}</span>
+          {f.done && (
+            <span style={{
+              marginLeft: "auto", fontSize: 10, fontWeight: 700,
+              color: T.green, background: `${T.green}15`,
+              padding: "2px 8px", borderRadius: 4,
+            }}>완료</span>
+          )}
         </div>
+      ))}
+    </div>
+  );
+}
 
-        {/* stats row */}
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(3,1fr)", gap: 12, margin: "18px 0 16px" }}>
+function YouTubeSection({ yt }: { yt: NonNullable<ClientCase["youtube"]> }) {
+  return (
+    <div style={{ margin: "16px 0 12px" }}>
+      {/* 28-day stats */}
+      <div style={{
+        background: `${YT_RED}08`, border: `1px solid ${YT_RED}20`,
+        borderRadius: 12, padding: 16, marginBottom: 14,
+      }}>
+        <div style={{ fontSize: 11, fontWeight: 700, color: YT_RED, marginBottom: 10, letterSpacing: 1 }}>
+          📊 최근 28일 실적 (YouTube Studio)
+        </div>
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(2, 1fr)", gap: 8 }}>
+          <StatBox label="조회수" value={yt.recent28d.views} sub={`↑ ${yt.recent28d.viewsSub}`} />
+          <StatBox label="시청 시간" value={`${yt.recent28d.watchHours} 시간`} />
+          <StatBox label="신규 구독자" value={yt.recent28d.newSubs} color={T.green} />
+          <StatBox label="예상 수익" value={yt.recent28d.revenue} />
+        </div>
+      </div>
+
+      {/* Growth loop */}
+      <div style={{
+        background: T.gw, borderRadius: 12, padding: 16, marginBottom: 14,
+      }}>
+        <div style={{ fontSize: 11, fontWeight: 700, color: T.text, marginBottom: 12, letterSpacing: 1 }}>
+          🔄 제작 → 관리 → 상승 루프
+        </div>
+        <div style={{ display: "flex", justifyContent: "center", alignItems: "center", gap: 0, flexWrap: "wrap" }}>
           {[
-            { l: "대표 키워드", v: c.keyword },
-            { l: "경쟁 업체", v: `${c.totalBiz}개` },
-            { l: "월 검색량", v: `${c.monthlySearch.toLocaleString()}건` },
+            { step: "제작", icon: "🎬", desc: "기획·촬영·편집", color: T.blue },
+            { step: "관리", icon: "📋", desc: "SEO·썸네일·업로드", color: T.yellow },
+            { step: "상승", icon: "📈", desc: "조회수·구독자 성장", color: T.green },
           ].map((s, i) => (
-            <div key={i} style={{ background: T.gw, borderRadius: 10, padding: "10px 12px" }}>
-              <div style={{ fontSize: 10, color: T.muted }}>{s.l}</div>
-              <div style={{ fontSize: 14, fontWeight: 700, color: T.text, marginTop: 2 }}>{s.v}</div>
+            <div key={i} style={{ display: "flex", alignItems: "center" }}>
+              <div style={{ textAlign: "center", minWidth: 80 }}>
+                <div style={{
+                  width: 44, height: 44, borderRadius: "50%", margin: "0 auto 6px",
+                  background: `${s.color}20`, border: `2px solid ${s.color}`,
+                  display: "flex", alignItems: "center", justifyContent: "center", fontSize: 20,
+                }}>{s.icon}</div>
+                <div style={{ fontSize: 13, fontWeight: 800, color: s.color }}>{s.step}</div>
+                <div style={{ fontSize: 10, color: T.muted }}>{s.desc}</div>
+              </div>
+              {i < 2 && (
+                <span style={{ fontSize: 18, color: T.dim, margin: "0 8px 16px" }}>→</span>
+              )}
             </div>
           ))}
         </div>
-
-        {/* badges */}
-        <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
-          {c.highlights.map((h, i) => <Badge key={i} color={T.green}>✓ {h}</Badge>)}
+        <div style={{
+          textAlign: "center", marginTop: 10, fontSize: 12, color: T.muted,
+          display: "flex", alignItems: "center", justifyContent: "center", gap: 6,
+        }}>
+          <span style={{ fontSize: 16 }}>↻</span>
+          이 루프를 반복하며 채널 조회수
+          <span style={{ color: T.green, fontWeight: 800 }}>{yt.growth} 증가</span>
+          달성
         </div>
+      </div>
 
-        <div style={{ marginTop: 14, fontSize: 12, color: T.dim, display: "flex", alignItems: "center", gap: 6 }}>
-          <span>🕐 {c.period}</span>
-          <span style={{ marginLeft: "auto", color: T.accent, fontWeight: 600 }}>
-            {open ? "트래킹 접기 ▲" : "순위 트래킹 보기 ▼"}
-          </span>
+      {/* Channel overview */}
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 8, marginBottom: 14 }}>
+        <StatBox label="총 구독자" value={`${yt.subs}명`} />
+        <StatBox label="누적 조회수" value={`${yt.totalViews} 뷰`} />
+        <StatBox label="운영 기간" value={`${yt.years}년+`} />
+      </div>
+
+      {/* YouTube → Awareness → Broadcast story */}
+      <div style={{
+        background: `linear-gradient(135deg, ${YT_RED}08, rgba(75,0,130,.08))`,
+        border: `1px solid ${YT_RED}18`, borderRadius: 12, padding: 16, marginBottom: 14,
+      }}>
+        <div style={{ fontSize: 11, fontWeight: 700, color: YT_RED, marginBottom: 12, letterSpacing: 1 }}>
+          📺 유튜브가 만든 선순환
         </div>
-
-        {/* Tracking expand */}
-        {open && (
-          <div style={{ marginTop: 18, borderTop: `1px solid ${T.border}`, paddingTop: 16 }}>
-            <div style={{ fontSize: 12, color: T.muted, fontWeight: 600, marginBottom: 10, letterSpacing: 1 }}>DAILY RANK TRACKING</div>
-            {c.tracking.map((t, i) => (
-              <div key={i} style={{
-                display: "flex", alignItems: "center", gap: 10, padding: "6px 0",
-                borderBottom: `1px solid ${T.gw}`,
-                animation: `fadeSlide .35s ease ${i * 40}ms both`,
-              }}>
-                <span style={{ width: 56, fontSize: 12, color: T.muted }}>{t.d}</span>
-                <RankDot rank={t.r} />
-                <div style={{ flex: 1, height: 3, background: T.gw, borderRadius: 2, overflow: "hidden" }}>
-                  <div style={{
-                    width: `${Math.max(8, 100 - (t.r - 1) * 16)}%`, height: "100%", borderRadius: 2,
-                    background: t.r === 1 ? T.green : t.r <= 3 ? T.yellow : T.accent,
-                    transition: "width .6s ease",
-                  }} />
-                </div>
+        <div style={{ display: "flex", justifyContent: "center", alignItems: "center", gap: 0, flexWrap: "wrap" }}>
+          {[
+            { step: "유튜브 성장", icon: "▶", desc: "41.2만 구독자", color: YT_RED },
+            { step: "인지도 상승", icon: "🔥", desc: "의료계 인플루언서", color: T.yellow },
+            { step: "공중파 출연", icon: "📺", desc: "MBN·MBC 다수", color: T.blue },
+          ].map((s, i) => (
+            <div key={i} style={{ display: "flex", alignItems: "center" }}>
+              <div style={{ textAlign: "center", minWidth: 80 }}>
+                <div style={{
+                  width: 44, height: 44, borderRadius: "50%", margin: "0 auto 6px",
+                  background: `${s.color}20`, border: `2px solid ${s.color}`,
+                  display: "flex", alignItems: "center", justifyContent: "center", fontSize: 18,
+                }}>{s.icon}</div>
+                <div style={{ fontSize: 12, fontWeight: 800, color: s.color }}>{s.step}</div>
+                <div style={{ fontSize: 10, color: T.muted }}>{s.desc}</div>
               </div>
-            ))}
-          </div>
-        )}
+              {i < 2 && (
+                <span style={{ fontSize: 18, color: T.dim, margin: "0 8px 16px" }}>→</span>
+              )}
+            </div>
+          ))}
+        </div>
+        <div style={{
+          textAlign: "center", marginTop: 12, fontSize: 12, fontWeight: 600, color: T.text,
+          background: `${YT_RED}10`, borderRadius: 8, padding: "8px 12px",
+        }}>
+          유튜브 채널 성장으로 <span style={{ color: YT_RED, fontWeight: 800 }}>공중파 제안이 쏟아지는</span> 선순환 구조
+        </div>
+      </div>
+
+      {/* Media credits */}
+      <div style={{
+        background: T.gw, borderRadius: 12, padding: 14, marginBottom: 14,
+      }}>
+        <div style={{ fontSize: 11, fontWeight: 700, color: T.muted, marginBottom: 10, letterSpacing: 1 }}>
+          📺 공중파 · 미디어 출연 실적
+        </div>
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(2, 1fr)", gap: 6 }}>
+          {yt.mediaCredits.map((m, i) => (
+            <div key={i} style={{
+              display: "flex", alignItems: "center", gap: 6,
+              padding: "6px 10px", background: `${YT_RED}08`, borderRadius: 8,
+              fontSize: 12, fontWeight: 600, color: T.text,
+            }}>
+              <span style={{ color: YT_RED }}>✦</span> {m}
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* Current YouTube clients */}
+      <div style={{
+        background: T.gw, borderRadius: 12, padding: 14,
+      }}>
+        <div style={{ fontSize: 11, fontWeight: 700, color: T.muted, marginBottom: 10, letterSpacing: 1 }}>
+          🎬 현재 유튜브 협업 고객사
+        </div>
+        <div style={{
+          display: "flex", flexWrap: "wrap", gap: 6, justifyContent: "center",
+        }}>
+          {[
+            "NAFIK", "만택루쎄의원", "MEDILOGIA", "Gaberoun", "모두의지인",
+            "슈퍼맨 비뇨기과", "HBT", "MBLab", "스탠탑 비뇨의학과", "Liz TV",
+            "Womanizer", "bnvbiolab", "Only for you", "박혜성몰", "Neomedix",
+            "HOMETHERA", "해성산부인과", "LEE YOUNG WHEE", "펠리체여성의원",
+          ].map((name, i) => (
+            <span key={i} style={{
+              padding: "5px 12px", borderRadius: 6, fontSize: 11, fontWeight: 600,
+              background: T.bgCard, border: `1px solid ${T.border}`, color: T.text,
+              whiteSpace: "nowrap",
+            }}>{name}</span>
+          ))}
+        </div>
+        <div style={{
+          textAlign: "center", marginTop: 10, fontSize: 11, color: T.muted,
+        }}>
+          외 다수 · 의료·뷰티·라이프스타일 전문
+        </div>
       </div>
     </div>
   );
 }
 
-function YoutubeCard() {
-  const fade = useFadeIn();
+/* ─────────────────────────────────────────────
+   Unified CaseCard
+   ───────────────────────────────────────────── */
+function ProofModal({ src, onClose }: { src: string; onClose: () => void }) {
+  const [scale, setScale] = useState(1);
+  const [pos, setPos] = useState({ x: 0, y: 0 });
+  const dragRef = useRef<{ startX: number; startY: number; ox: number; oy: number } | null>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") onClose();
+      if (e.key === "+" || e.key === "=") setScale(s => Math.min(s + 0.3, 5));
+      if (e.key === "-") setScale(s => Math.max(s - 0.3, 0.5));
+      if (e.key === "0") { setScale(1); setPos({ x: 0, y: 0 }); }
+    };
+    const onWheel = (e: WheelEvent) => {
+      e.preventDefault();
+      setScale(s => Math.min(Math.max(s - e.deltaY * 0.002, 0.5), 5));
+    };
+    document.addEventListener("keydown", onKey);
+    const el = containerRef.current;
+    if (el) el.addEventListener("wheel", onWheel, { passive: false });
+    document.body.style.overflow = "hidden";
+    return () => {
+      document.removeEventListener("keydown", onKey);
+      if (el) el.removeEventListener("wheel", onWheel);
+      document.body.style.overflow = "";
+    };
+  }, [onClose]);
+
+  const onPointerDown = (e: React.PointerEvent) => {
+    if (scale <= 1) return;
+    e.currentTarget.setPointerCapture(e.pointerId);
+    dragRef.current = { startX: e.clientX, startY: e.clientY, ox: pos.x, oy: pos.y };
+  };
+  const onPointerMove = (e: React.PointerEvent) => {
+    if (!dragRef.current) return;
+    setPos({
+      x: dragRef.current.ox + (e.clientX - dragRef.current.startX),
+      y: dragRef.current.oy + (e.clientY - dragRef.current.startY),
+    });
+  };
+  const onPointerUp = () => { dragRef.current = null; };
+
   return (
-    <div ref={fade.ref} style={{ ...fade.style }}>
-      <div style={{
-        background: T.bgCard, border: `1px solid ${T.border}`, borderRadius: 16,
-        padding: "28px 28px 24px", position: "relative", overflow: "hidden",
+    <div ref={containerRef} onClick={onClose} style={{
+      position: "fixed", inset: 0, zIndex: 9999,
+      background: "rgba(0,0,0,0.88)", backdropFilter: "blur(6px)",
+      display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center",
+      padding: 20,
+    }}>
+      {/* Controls bar */}
+      <div onClick={e => e.stopPropagation()} style={{
+        position: "absolute", bottom: 24, left: "50%", transform: "translateX(-50%)",
+        display: "flex", alignItems: "center", gap: 6, zIndex: 10,
+        background: T.bgCard, border: `1px solid ${T.border}`,
+        borderRadius: 12, padding: "6px 10px",
       }}>
-        <div style={{ position: "absolute", inset: "0 0 auto 0", height: 3, background: "#ff0000" }} />
-        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", flexWrap: "wrap", gap: 12 }}>
+        <button onClick={() => setScale(s => Math.max(s - 0.3, 0.5))} style={zoomBtnStyle}>−</button>
+        <span style={{ fontSize: 12, color: T.text, fontWeight: 700, minWidth: 48, textAlign: "center" }}>
+          {Math.round(scale * 100)}%
+        </span>
+        <button onClick={() => setScale(s => Math.min(s + 0.3, 5))} style={zoomBtnStyle}>+</button>
+        <div style={{ width: 1, height: 18, background: T.border, margin: "0 4px" }} />
+        <button onClick={() => { setScale(1); setPos({ x: 0, y: 0 }); }} style={{ ...zoomBtnStyle, fontSize: 11, width: "auto", padding: "0 8px" }}>초기화</button>
+        <div style={{ width: 1, height: 18, background: T.border, margin: "0 4px" }} />
+        <button onClick={onClose} style={{ ...zoomBtnStyle, color: T.accent }}>✕</button>
+      </div>
+
+      {/* Image */}
+      <div
+        onClick={e => e.stopPropagation()}
+        onPointerDown={onPointerDown}
+        onPointerMove={onPointerMove}
+        onPointerUp={onPointerUp}
+        style={{
+          cursor: scale > 1 ? "grab" : "zoom-in",
+          overflow: "hidden", maxWidth: "95vw", maxHeight: "85vh",
+          display: "flex", alignItems: "center", justifyContent: "center",
+        }}
+      >
+        <img
+          src={src}
+          alt="실제 순위 트래킹 증명"
+          draggable={false}
+          onClick={() => { if (scale <= 1) setScale(2); else { setScale(1); setPos({ x: 0, y: 0 }); } }}
+          style={{
+            maxWidth: "95vw", maxHeight: "85vh",
+            borderRadius: 12, border: `1px solid ${T.border}`,
+            objectFit: "contain",
+            transform: `scale(${scale}) translate(${pos.x / scale}px, ${pos.y / scale}px)`,
+            transition: dragRef.current ? "none" : "transform 0.2s ease",
+            userSelect: "none",
+          }}
+        />
+      </div>
+    </div>
+  );
+}
+
+const zoomBtnStyle: React.CSSProperties = {
+  width: 30, height: 30, borderRadius: 8,
+  background: "transparent", border: `1px solid ${T.border}`,
+  color: T.text, fontSize: 16, fontWeight: 700,
+  cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center",
+};
+
+function CaseCard({ c }: { c: ClientCase }) {
+  const [open, setOpen] = useState(true);
+  const [showProof, setShowProof] = useState(false);
+  const fade = useFadeIn();
+  const hasTracking = !!c.tracking && c.tracking.length > 0;
+  const autoFeatures = c.automationFeatures as unknown as Array<{ label: string; done: boolean }> | undefined;
+
+  return (
+    <div ref={fade.ref} style={{ ...fade.style }} id={c.id}>
+      <div
+        onClick={() => hasTracking && setOpen(!open)}
+        style={{
+          background: T.bgCard, border: `1px solid ${T.border}`, borderRadius: 16,
+          padding: "28px 28px 24px", cursor: hasTracking ? "pointer" : "default",
+          position: "relative", overflow: "hidden", transition: "border-color .25s",
+        }}
+        onMouseEnter={e => (e.currentTarget.style.borderColor = `${c.accentColor}44`)}
+        onMouseLeave={e => (e.currentTarget.style.borderColor = T.border)}
+      >
+        {/* top accent line */}
+        <div style={{ position: "absolute", inset: "0 0 auto 0", height: 3, background: c.accentColor }} />
+
+        {/* Header */}
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 12, flexWrap: "wrap" }}>
           <div>
-            <span style={{ fontSize: 11, color: T.muted, fontWeight: 600, letterSpacing: 1 }}>유튜브 · 의료 콘텐츠</span>
-            <h3 style={{ fontSize: 20, fontWeight: 800, margin: "4px 0 0", color: T.text }}>{YOUTUBE.name}</h3>
-          </div>
-          <Badge color="#ff0000">▶ YouTube 41만</Badge>
-        </div>
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(3,1fr)", gap: 12, margin: "18px 0 16px" }}>
-          {[
-            { l: "구독자", v: YOUTUBE.subs + "명" },
-            { l: "누적 조회수", v: YOUTUBE.views + " 뷰" },
-            { l: "운영 기간", v: YOUTUBE.years + "년" },
-          ].map((s, i) => (
-            <div key={i} style={{ background: T.gw, borderRadius: 10, padding: "10px 12px" }}>
-              <div style={{ fontSize: 10, color: T.muted }}>{s.l}</div>
-              <div style={{ fontSize: 14, fontWeight: 700, color: T.text, marginTop: 2 }}>{s.v}</div>
+            <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 4 }}>
+              <span style={{ fontSize: 11, color: T.muted, fontWeight: 600, letterSpacing: 1 }}>{c.category} · {c.area}</span>
+              <TierBadge tier={c.tier} extra={c.tierExtra} />
             </div>
-          ))}
+            <h3 style={{ fontSize: 20, fontWeight: 800, margin: 0, color: T.text }}>{c.name}</h3>
+          </div>
+          {c.rank != null && <RankDot rank={c.rank} />}
         </div>
+
+        {/* Capability banner */}
+        <div style={{
+          margin: "16px 0", padding: "12px 16px", borderRadius: 10,
+          background: `${c.accentColor}12`, border: `1px solid ${c.accentColor}25`,
+          display: "flex", alignItems: "center", gap: 10,
+        }}>
+          <span style={{ fontSize: 22 }}>{c.capabilityIcon}</span>
+          <div>
+            <div style={{ fontSize: 11, fontWeight: 800, color: c.accentColor, letterSpacing: 1 }}>{c.capabilityLabel}</div>
+            <div style={{ fontSize: 15, fontWeight: 700, color: T.text, marginTop: 2 }}>{c.capabilityQuote}</div>
+          </div>
+        </div>
+
+        {/* Ranking stats (cases 1, 2) */}
+        {c.totalBiz != null && c.monthlySearch != null && (
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(3,1fr)", gap: 8, margin: "0 0 14px" }}>
+            <StatBox label="대표 키워드" value={c.keyword} />
+            <StatBox label="경쟁 업체" value={`${c.totalBiz}개`} />
+            <StatBox label="월 검색량" value={`${c.monthlySearch.toLocaleString()}건`} />
+          </div>
+        )}
+
+        {/* Automation checklist (case 3) */}
+        {c.capability === "automation" && autoFeatures && (
+          <AutomationChecklist features={autoFeatures} />
+        )}
+
+        {/* YouTube section (case 4) */}
+        {c.capability === "content_growth" && c.youtube && (
+          <YouTubeSection yt={c.youtube} />
+        )}
+
+        {/* Badges */}
         <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
-          {YOUTUBE.highlights.map((h, i) => <Badge key={i} color="#ff0000">✓ {h}</Badge>)}
+          {c.highlights.map((h, i) => <Badge key={i} color={T.green}>✓ {h}</Badge>)}
         </div>
+
+        {/* Footer row */}
+        <div style={{ marginTop: 14, display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
+          {c.naverUrl && <NaverLink url={c.naverUrl} />}
+          {c.proofImage && (
+            <button
+              onClick={e => { e.stopPropagation(); setShowProof(true); }}
+              style={{
+                display: "inline-flex", alignItems: "center", gap: 5,
+                padding: "6px 14px", borderRadius: 8, fontSize: 12, fontWeight: 700,
+                color: T.yellow, background: `${T.yellowDim}`,
+                border: `1px solid ${T.yellow}40`, cursor: "pointer",
+                transition: "background .2s",
+              }}
+            >📸 실제 증명 보기</button>
+          )}
+          <span style={{ fontSize: 12, color: T.dim }}>🕐 {c.period}</span>
+          {hasTracking && (
+            <span style={{ marginLeft: "auto", color: T.accent, fontWeight: 600, fontSize: 12 }}>
+              {open ? "트래킹 접기 ▲" : "순위 트래킹 보기 ▼"}
+            </span>
+          )}
+        </div>
+
+        {showProof && c.proofImage && (
+          <ProofModal src={c.proofImage} onClose={() => setShowProof(false)} />
+        )}
+
+        {/* Tracking expand — 7-column grid */}
+        {open && c.tracking && (() => {
+          const knockRanks = c.takeoverIndex != null
+            ? c.tracking.slice(0, c.takeoverIndex).map(t => t.r)
+            : c.tracking.map(t => t.r);
+          const ranks = c.tracking.map(t => t.r);
+          const avg = (knockRanks.reduce((a, b) => a + b, 0) / knockRanks.length).toFixed(1);
+          const currentRank = ranks[0];
+          const initialRank = c.takeoverIndex != null
+            ? c.tracking[c.takeoverIndex]?.r ?? ranks[ranks.length - 1]
+            : ranks[ranks.length - 1];
+          const rankColor = (r: number) =>
+            r === 1 ? T.green : r <= 3 ? T.yellow : r <= 5 ? T.blue : T.muted;
+          const rankBg = (r: number) =>
+            r === 1 ? "rgba(52,199,89,0.08)" : r <= 3 ? "rgba(249,168,37,0.08)" : r <= 5 ? "rgba(74,158,255,0.06)" : "transparent";
+          return (
+            <div style={{ marginTop: 18, borderTop: `1px solid ${T.border}`, paddingTop: 14 }}>
+              <div style={{ display: "flex", flexDirection: "column", gap: 8, marginBottom: 12 }}>
+                <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: 8 }}>
+                  <div style={{ fontSize: 11, color: T.muted, fontWeight: 600, letterSpacing: 1 }}>DAILY RANK TRACKING</div>
+                  <span style={{ fontSize: 11, color: T.muted }}>최신순 ↓</span>
+                </div>
+                <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
+                  <span style={{
+                    display: "inline-flex", alignItems: "center", gap: 4,
+                    background: "rgba(233,69,96,0.1)", border: "1px solid rgba(233,69,96,0.25)",
+                    color: T.accent, padding: "3px 10px", borderRadius: 99, fontSize: 11, fontWeight: 700,
+                  }}>{c.takeoverIndex != null ? "5~8위 오르락 내리락 (맡을 당시)" : `맡을 당시 ${initialRank}위`}</span>
+                  <span style={{
+                    display: "inline-flex", alignItems: "center", gap: 4,
+                    background: `${rankColor(currentRank)}15`, border: `1px solid ${rankColor(currentRank)}35`,
+                    color: rankColor(currentRank), padding: "3px 10px", borderRadius: 99, fontSize: 11, fontWeight: 700,
+                  }}>현재 {currentRank}위</span>
+                </div>
+              </div>
+              <div className="rank-grid">
+                {c.tracking.map((t, i) => {
+                  const isPre = c.takeoverIndex != null && i >= c.takeoverIndex;
+                  if (isPre) return null;
+                  return (
+                    <React.Fragment key={i}>
+                      {c.takeoverIndex != null && i === c.takeoverIndex && (
+                        <div style={{ gridColumn: "1 / -1", display: "flex", alignItems: "center", gap: 8, margin: "6px 0", padding: "4px 0" }}>
+                          <span style={{ flex: 1, height: 1, background: `${T.accent}30` }} />
+                          <span style={{ fontSize: 10, fontWeight: 700, color: T.accent, whiteSpace: "nowrap" }}>↓ 타 업체 운영 기간 (5~8위 오르락 내리락)</span>
+                          <span style={{ flex: 1, height: 1, background: `${T.accent}30` }} />
+                        </div>
+                      )}
+                      <div style={{
+                        display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center",
+                        gap: 2, padding: 8, borderRadius: 8,
+                        background: rankBg(t.r),
+                        animation: `fadeSlide .2s ease ${Math.min(i, 40) * 15}ms both`,
+                      }}>
+                        <span style={{ fontSize: 11, color: T.muted, lineHeight: 1 }}>{t.d}</span>
+                        <span style={{ fontSize: 16, fontWeight: 800, color: rankColor(t.r), lineHeight: 1.2 }}>{t.r}위</span>
+                      </div>
+                    </React.Fragment>
+                  );
+                })}
+              </div>
+
+              {/* 노크 이관 구분선 + 타 업체 요약 배너 */}
+              {c.takeoverIndex != null && (
+                <>
+                  {/* 구분선 with pill */}
+                  <div style={{ display: "flex", alignItems: "center", gap: 0, margin: "20px 0 16px" }}>
+                    <span style={{ flex: 1, height: 1, background: "#1e1e32" }} />
+                    <span style={{
+                      background: "#0d0d1a", border: "1px solid #e94560", color: "#e94560",
+                      fontSize: 11, padding: "4px 12px", borderRadius: 99, whiteSpace: "nowrap", fontWeight: 600,
+                    }}>노크 이관 (2025.11)</span>
+                    <span style={{ flex: 1, height: 1, background: "#1e1e32" }} />
+                  </div>
+
+                  {/* 타 업체 요약 배너 */}
+                  <div style={{
+                    background: "rgba(249, 168, 37, 0.06)",
+                    border: "1px dashed rgba(249, 168, 37, 0.3)",
+                    borderRadius: 12, padding: "24px 32px", textAlign: "center",
+                  }}>
+                    <div style={{ fontSize: 13, color: "#f9a825", fontWeight: 600, marginBottom: 8 }}>
+                      ⚠️ 타 업체 5개월간 운영 (11월 이관 전)
+                    </div>
+                    <div style={{ fontFamily: "Outfit, sans-serif", fontSize: 36, fontWeight: 900, color: "#f9a825", lineHeight: 1.2 }}>
+                      5~8위
+                    </div>
+                    <div style={{ fontSize: 15, color: "#72728a", marginTop: 4 }}>
+                      오르락 내리락
+                    </div>
+                    <div style={{ fontSize: 12, color: "#3a3a52", marginTop: 10 }}>
+                      5개월간 상위권 진입 실패
+                    </div>
+                  </div>
+                </>
+              )}
+            </div>
+          );
+        })()}
       </div>
     </div>
   );
@@ -276,64 +873,101 @@ function YoutubeCard() {
    PAGE
    ───────────────────────────────────────────── */
 export default function ReferencesPage() {
+  const basicCases = CLIENT_CASES.filter(c => c.tier === "basic");
+  const premiumCases = CLIENT_CASES.filter(c => c.tier === "premium");
+
   return (
     <main style={{
       background: T.bg, color: T.text, minHeight: "100vh",
-      fontFamily: "var(--font-sans, 'Pretendard', -apple-system, sans-serif)",
+      fontFamily: "var(--font-noto-sans-kr, sans-serif)",
     }}>
       <style>{`
         @keyframes fadeSlide { from { opacity:0; transform:translateX(-12px); } to { opacity:1; transform:none; } }
+        .rank-grid {
+          display: grid;
+          grid-template-columns: repeat(7, 1fr);
+          gap: 4px;
+        }
+        @media (max-width: 640px) {
+          .rank-grid { grid-template-columns: repeat(5, 1fr); }
+        }
+        @media (max-width: 420px) {
+          .rank-grid { grid-template-columns: repeat(4, 1fr); }
+        }
       `}</style>
 
       {/* ── NAV ── */}
-      <nav style={{
-        position: "sticky", top: 0, zIndex: 50,
-        background: `${T.bg}cc`, backdropFilter: "blur(12px)",
-        borderBottom: `1px solid ${T.border}`, padding: "14px 24px",
-        display: "flex", alignItems: "center", justifyContent: "space-between",
-      }}>
-        <Link href="/" style={{ color: T.text, textDecoration: "none", fontWeight: 800, fontSize: 16, letterSpacing: -0.5 }}>
-          <span style={{ color: T.accent }}>KNOCK</span> 병원 마케팅
-        </Link>
-        <div style={{ display: "flex", gap: 20, fontSize: 13, fontWeight: 600 }}>
-          <Link href="/" style={{ color: T.muted, textDecoration: "none" }}>플라이휠</Link>
-          <Link href="/references" style={{ color: T.accent, textDecoration: "none" }}>레퍼런스</Link>
-          <Link href="/login" style={{ color: T.muted, textDecoration: "none" }}>로그인</Link>
-        </div>
-      </nav>
+      <GlobalNav />
 
       {/* ── HERO ── */}
       <header style={{
-        padding: "80px 24px 60px", textAlign: "center", position: "relative",
+        padding: "40px 24px 24px", textAlign: "center", position: "relative",
         background: `radial-gradient(ellipse at 50% 0%, rgba(15,52,96,.3) 0%, transparent 60%)`,
       }}>
-        <Badge color={T.accent}>동별 1업종 독점 보장</Badge>
-        <h1 style={{ fontSize: "clamp(28px, 5vw, 48px)", fontWeight: 900, lineHeight: 1.15, margin: "20px 0 14px" }}>
+        <h1 style={{ fontSize: "clamp(28px, 5vw, 48px)", fontWeight: 900, lineHeight: 1.15, margin: "10px 0 10px" }}>
           숫자로 증명하는<br />
           <span style={{ color: T.accent }}>병원 마케팅 레퍼런스</span>
         </h1>
-        <p style={{ color: T.muted, fontSize: 15, maxWidth: 420, margin: "0 auto", lineHeight: 1.7 }}>
+        <p style={{ color: T.muted, fontSize: 15, maxWidth: 460, margin: "0 auto 16px", lineHeight: 1.7 }}>
           네이버 플레이스 상위 노출부터 유튜브 채널 성장까지,<br />
           실제 고객사의 성과를 투명하게 공개합니다.
         </p>
+
+        {/* Capability pills */}
+        <div style={{ display: "flex", justifyContent: "center", flexWrap: "wrap", gap: 8 }}>
+          {CLIENT_CASES.map(c => (
+            <a key={c.id} href={`#${c.id}`} style={{
+              display: "inline-flex", alignItems: "center", gap: 5,
+              padding: "6px 14px", borderRadius: 8, fontSize: 12, fontWeight: 700,
+              color: c.accentColor, background: `${c.accentColor}12`,
+              border: `1px solid ${c.accentColor}25`, textDecoration: "none",
+              transition: "background .2s",
+            }}>
+              {c.capabilityIcon} {c.capabilityLabel}
+            </a>
+          ))}
+        </div>
       </header>
 
-      {/* ── SECTION 1 — CASES ── */}
-      <section style={{ maxWidth: 900, margin: "0 auto", padding: "0 24px 60px" }}>
-        <SectionTag num="1" label="Reference Cases" />
-        <h2 style={{ fontSize: 28, fontWeight: 900, marginBottom: 8 }}>실적이 말합니다</h2>
-        <p style={{ color: T.muted, fontSize: 14, marginBottom: 36 }}>
+      {/* ── SECTION 1 — BASIC CASES (순위) ── */}
+      <section style={{ maxWidth: 900, margin: "0 auto", padding: "0 24px 40px" }}>
+        <SectionTag num="1" label="Naver Place Ranking" />
+        <h2 style={{ fontSize: 28, fontWeight: 900, marginBottom: 6 }}>순위가 증명합니다</h2>
+        <p style={{ color: T.muted, fontSize: 14, marginBottom: 20 }}>
           카드를 클릭하면 일별 순위 트래킹 데이터를 볼 수 있습니다.
         </p>
         <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
-          {CASES.map(c => <CaseCard key={c.id} c={c} />)}
-          <YoutubeCard />
+          {basicCases.map(c => <CaseCard key={c.id} c={c} />)}
         </div>
       </section>
 
-      {/* ── SECTION 2 — TRACKING ── */}
+      {/* ── DIVIDER ── */}
+      <div style={{
+        maxWidth: 900, margin: "0 auto", padding: "20px 24px 40px",
+        display: "flex", alignItems: "center", gap: 16,
+      }}>
+        <div style={{ flex: 1, height: 1, background: `linear-gradient(to right, transparent, ${T.border})` }} />
+        <span style={{ fontSize: 13, fontWeight: 700, color: T.accent, whiteSpace: "nowrap" }}>
+          순위를 넘어, 비즈니스 전체를
+        </span>
+        <div style={{ flex: 1, height: 1, background: `linear-gradient(to left, transparent, ${T.border})` }} />
+      </div>
+
+      {/* ── SECTION 2 — PLATINUM CASES (풀서비스) ── */}
       <section style={{ maxWidth: 900, margin: "0 auto", padding: "0 24px 60px" }}>
-        <SectionTag num="2" label="Tracking System" />
+        <SectionTag num="2" label="Full Service" />
+        <h2 style={{ fontSize: 28, fontWeight: 900, marginBottom: 8 }}>풀서비스로 성장시킵니다</h2>
+        <p style={{ color: T.muted, fontSize: 14, marginBottom: 36 }}>
+          순위 관리를 넘어 자동화, 콘텐츠, 채널 성장까지 책임집니다.
+        </p>
+        <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
+          {premiumCases.map(c => <CaseCard key={c.id} c={c} />)}
+        </div>
+      </section>
+
+      {/* ── SECTION 3 — TRACKING ── */}
+      <section style={{ maxWidth: 900, margin: "0 auto", padding: "0 24px 60px" }}>
+        <SectionTag num="3" label="Tracking System" />
         <h2 style={{ fontSize: 28, fontWeight: 900, marginBottom: 8 }}>실시간으로 확인하세요</h2>
         <p style={{ color: T.muted, fontSize: 14, marginBottom: 36 }}>
           고객님 전용 대시보드에서 순위·활동·성과를 24시간 확인할 수 있습니다.
@@ -343,7 +977,6 @@ export default function ReferencesPage() {
           background: T.bgCard, border: `1px solid ${T.border}`, borderRadius: 16,
           padding: 28, display: "flex", flexDirection: "column", gap: 20,
         }}>
-          {/* Feature pills */}
           <div style={{ display: "flex", flexWrap: "wrap", gap: 10 }}>
             {["📊 일별 순위 트래킹", "📝 활동 로그 타임라인", "✅ 서브노드 체크리스트", "📎 리포트 첨부", "🔒 패키지별 잠금/해제"].map((f, i) => (
               <span key={i} style={{
@@ -353,11 +986,10 @@ export default function ReferencesPage() {
             ))}
           </div>
 
-          {/* How it works */}
           <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))", gap: 14 }}>
             {[
               { step: "01", title: "계약 시 계정 발급", desc: "전용 로그인 제공" },
-              { step: "02", title: "플라이휠 상태 표시", desc: "초록/노랑/회색 실시간" },
+              { step: "02", title: "노크 시스템 상태 표시", desc: "초록/노랑/회색 실시간" },
               { step: "03", title: "활동 로그 기록", desc: "모든 작업 내역 공개" },
               { step: "04", title: "월간 리포트", desc: "성과 요약 제공" },
             ].map((s, i) => (
@@ -376,82 +1008,17 @@ export default function ReferencesPage() {
           }}>
             🔐 숨기는 것 없이, 고객이 직접 확인하는 투명한 마케팅
           </div>
-        </div>
-      </section>
 
-      {/* ── SECTION 3 — GUARANTEE ── */}
-      <section style={{ maxWidth: 900, margin: "0 auto", padding: "0 24px 60px" }}>
-        <SectionTag num="3" label="Our Guarantee" />
-        <h2 style={{ fontSize: 28, fontWeight: 900, marginBottom: 8 }}>못 하면, 책임집니다</h2>
-        <p style={{ color: T.muted, fontSize: 14, marginBottom: 36 }}>
-          계약서에 명시되는 성과 보장입니다.
-        </p>
-
-        {/* Timeline */}
-        <div style={{
-          background: T.bgCard, border: `1px solid ${T.border}`, borderRadius: 16,
-          padding: 28, marginBottom: 24,
-        }}>
-          <div style={{
-            display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(140px, 1fr))",
-            gap: 16, position: "relative",
+          <Link href="/system" style={{
+            display: "flex", alignItems: "center", justifyContent: "center", gap: 8,
+            padding: "14px 28px", borderRadius: 12, fontSize: 15, fontWeight: 700,
+            background: `linear-gradient(135deg, ${T.accent}, #c73a54)`,
+            color: "#fff", textDecoration: "none",
+            boxShadow: `0 4px 20px ${T.accentDim}`,
+            transition: "transform .2s, box-shadow .2s",
           }}>
-            {[
-              { m: "시작", ico: "⚡", d: "키워드 분석 착수", c: T.accent },
-              { m: "1개월", ico: "📈", d: "순위 상승 시작", c: T.yellow },
-              { m: "2개월", ico: "📊", d: "목표 근접", c: T.yellow },
-              { m: "3개월", ico: "🎯", d: "5위 이내 확인", c: T.green },
-              { m: "미달성?", ico: "🛡️", d: "달성까지 무료 연장", c: T.green },
-            ].map((s, i) => (
-              <div key={i} style={{ textAlign: "center" }}>
-                <div style={{
-                  width: 40, height: 40, borderRadius: "50%", margin: "0 auto 10px",
-                  background: `${s.c}20`, border: `2px solid ${s.c}`,
-                  display: "flex", alignItems: "center", justifyContent: "center", fontSize: 18,
-                }}>{s.ico}</div>
-                <div style={{ fontSize: 13, fontWeight: 800, color: s.c, marginBottom: 3 }}>{s.m}</div>
-                <div style={{ fontSize: 11, color: T.muted }}>{s.d}</div>
-              </div>
-            ))}
-          </div>
-
-          <div style={{
-            marginTop: 24, background: T.greenDim, border: `1px solid ${T.green}30`,
-            borderRadius: 12, padding: "16px 20px", display: "flex", alignItems: "center", gap: 14,
-            flexWrap: "wrap",
-          }}>
-            <span style={{ fontSize: 28 }}>🛡️</span>
-            <div>
-              <div style={{ fontWeight: 800, color: T.green, fontSize: 16 }}>
-                Basic 이상: 3개월 5위 이내 개런티
-              </div>
-              <div style={{ color: T.muted, fontSize: 13, marginTop: 2 }}>
-                미달성 시 달성까지 추가 비용 없이 관리를 계속합니다.
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* Packages */}
-        <div style={{
-          display: "grid",
-          gridTemplateColumns: "repeat(auto-fit, minmax(160px, 1fr))",
-          gap: 12,
-        }}>
-          {PACKAGES.map((p, i) => (
-            <div key={i} style={{
-              background: p.featured ? T.accentDim : T.bgCard,
-              border: `1px solid ${p.featured ? `${T.accent}44` : T.border}`,
-              borderRadius: 14, padding: "18px 16px", textAlign: "center",
-              position: "relative", overflow: "hidden",
-            }}>
-              <div style={{ position: "absolute", inset: "0 0 auto 0", height: 3, background: p.color }} />
-              <div style={{ fontSize: 12, fontWeight: 800, color: p.color, marginBottom: 3 }}>{p.name}</div>
-              <div style={{ fontSize: 18, fontWeight: 900, marginBottom: 3 }}>{p.price}</div>
-              <div style={{ fontSize: 11, color: T.muted, marginBottom: 10 }}>{p.note}</div>
-              <Badge color={p.color}>{p.guarantee}</Badge>
-            </div>
-          ))}
+            🔍 트래킹 솔루션 보러가기 →
+          </Link>
         </div>
       </section>
 
@@ -482,7 +1049,7 @@ export default function ReferencesPage() {
               📞 무료 상담 신청 →
             </a>
             <div style={{ marginTop: 14, fontSize: 12, color: T.dim }}>
-              노크AI · Fillupwithmarketing
+              노크AI · Knock
             </div>
           </div>
         </div>

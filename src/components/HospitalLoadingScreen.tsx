@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 
-const HOSPITAL_EMOJIS = ["🏥", "😁", "💉", "👩‍⚕️", "💪", "😊", "🦷", "❤️‍🩹", "🩺", "👨‍⚕️", "🌟", "💊"];
+const HOSPITAL_EMOJIS = ["🏥", "😁", "💉", "👩‍⚕️", "💪", "😊", "🩻", "❤️‍🩹", "🩺", "👨‍⚕️", "🌟", "💊"];
 
 export function HospitalLoadingScreen() {
   const [index, setIndex] = useState(0);

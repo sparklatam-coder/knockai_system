@@ -8,6 +8,8 @@ export type ActionType =
   | "note"
   | "file_upload";
 
+export type LogType = "memo" | "work";
+
 export type AuthRole = "admin" | "client" | "guest";
 
 export type NodeGroup = "pipeline" | "cs360";
@@ -71,8 +73,10 @@ export interface ActivityLog {
   client_id: string;
   node_key: NodeKey;
   action_type: ActionType;
+  log_type: LogType;
   content: string;
   attachment_url: string | null;
+  image_urls: string[];
   created_by: string | null;
   created_at: string;
   visible_to_client: boolean;

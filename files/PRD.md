@@ -16,7 +16,7 @@
 
 ## 2. 사용자 역할
 
-### Admin (Fillupwithmarketing 내부 담당자)
+### Admin (Knock 내부 담당자)
 - 고객 생성/수정/삭제
 - 노드 상태 변경 (inactive → in_progress → active)
 - 활동 로그 작성 (날짜 + 카테고리 + 내용 + 첨부)

@@ -1,31 +1,32 @@
 "use client";
 
-import { useMemo, useState } from "react";
-import { NODE_META } from "@/lib/constants";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { createPortal } from "react-dom";
+import { NODE_META, LEAD_NURTURE_SPLIT } from "@/lib/constants";
 import { useClientDetail } from "@/hooks/use-client-detail";
+import { useAuth } from "@/hooks/use-auth";
 import { HospitalLoadingScreen } from "@/components/HospitalLoadingScreen";
-import type { ActionType, ActivityLog, NodeStatus, SubNode } from "@/lib/types";
+import type { ActivityLog, LogType, NodeKey, NodeRecord, NodeStatus, SubNode } from "@/lib/types";
 
 /* ── constants ──────────────────────────────────────── */
 const STATUS_OPTIONS: { value: NodeStatus; label: string; color: string; bg: string }[] = [
-  { value: "inactive",    label: "대기",    color: "#9E9E9E", bg: "rgba(158,158,158,0.12)" },
-  { value: "in_progress", label: "진행 중", color: "#F9A825", bg: "rgba(249,168,37,0.12)" },
-  { value: "active",      label: "완료",    color: "#34C759", bg: "rgba(52,199,89,0.12)"  },
+  { value: "inactive",    label: "대기",    color: "var(--status-inactive)", bg: "var(--status-inactive-bg)" },
+  { value: "in_progress", label: "진행 중", color: "var(--status-progress)", bg: "var(--status-progress-bg)" },
+  { value: "active",      label: "완료",    color: "var(--status-active)",   bg: "var(--status-active-bg)"  },
 ];
 
-const ACTION_OPTIONS: { value: ActionType; label: string; color: string }[] = [
-  { value: "note",          label: "메모",       color: "var(--gP)" },
-  { value: "task_complete", label: "작업 완료",   color: "var(--gG)" },
-  { value: "status_change", label: "상태 변경",   color: "var(--gW)" },
-  { value: "file_upload",   label: "파일 업로드", color: "var(--gPu)" },
-];
+const LOG_TYPE_META: Record<LogType, { label: string; badge: string; color: string; bg: string }> = {
+  memo: { label: "내부 메모", badge: "🔒 내부", color: "#72728a", bg: "rgba(114,114,138,0.15)" },
+  work: { label: "작업 기록", badge: "👁 공개", color: "#34c759", bg: "rgba(52,199,89,0.1)" },
+};
 
-const ACTION_LABEL: Record<ActionType, string> = {
-  note: "메모", task_complete: "작업 완료", status_change: "상태 변경", file_upload: "파일 업로드",
-};
-const ACTION_COLOR: Record<ActionType, string> = {
-  note: "var(--gP)", task_complete: "var(--gG)", status_change: "var(--gW)", file_upload: "var(--gPu)",
-};
+/* ── types for global pending changes ─────────────── */
+interface PendingChanges {
+  nodes: Record<string, { status: NodeStatus }>;
+  tasks: Record<string, boolean>;
+}
+
+const EMPTY_PENDING: PendingChanges = { nodes: {}, tasks: {} };
 
 /* ── segmented control ──────────────────────────────── */
 function SegControl<T extends string>({
@@ -57,6 +58,92 @@ function SegControl<T extends string>({
   );
 }
 
+/* ── image thumbnails (shared by LogItem + LogComposer) */
+function ImageThumbnails({ urls }: { urls: string[] }) {
+  const [open, setOpen] = useState<number | null>(null);
+  if (urls.length === 0) return null;
+
+  const overlay = open !== null ? createPortal(
+    <div
+      onClick={() => setOpen(null)}
+      style={{
+        position: "fixed", inset: 0, zIndex: 99999,
+        background: "rgba(0,0,0,0.9)", display: "flex",
+        alignItems: "center", justifyContent: "center", cursor: "zoom-out",
+      }}
+    >
+      <button
+        onClick={(e) => { e.stopPropagation(); setOpen(null); }}
+        style={{
+          position: "fixed", top: 20, right: 20,
+          background: "rgba(255,255,255,0.2)", border: "none", borderRadius: "50%",
+          width: 48, height: 48, fontSize: 28, color: "#fff", cursor: "pointer",
+          display: "flex", alignItems: "center", justifyContent: "center",
+        }}
+      >✕</button>
+      {urls.length > 1 && open > 0 && (
+        <button
+          onClick={(e) => { e.stopPropagation(); setOpen(open - 1); }}
+          style={{
+            position: "fixed", left: 20, top: "50%", transform: "translateY(-50%)",
+            background: "rgba(255,255,255,0.2)", border: "none", borderRadius: "50%",
+            width: 48, height: 48, fontSize: 24, color: "#fff", cursor: "pointer",
+          }}
+        >‹</button>
+      )}
+      {urls.length > 1 && open < urls.length - 1 && (
+        <button
+          onClick={(e) => { e.stopPropagation(); setOpen(open + 1); }}
+          style={{
+            position: "fixed", right: 20, top: "50%", transform: "translateY(-50%)",
+            background: "rgba(255,255,255,0.2)", border: "none", borderRadius: "50%",
+            width: 48, height: 48, fontSize: 24, color: "#fff", cursor: "pointer",
+          }}
+        >›</button>
+      )}
+      <img
+        src={urls[open]}
+        alt={`첨부 ${open + 1}`}
+        onClick={(e) => e.stopPropagation()}
+        style={{ maxWidth: "90vw", maxHeight: "85vh", objectFit: "contain", borderRadius: 8, cursor: "default" }}
+      />
+    </div>,
+    document.body,
+  ) : null;
+
+  return (
+    <>
+      <div style={{ display: "flex", gap: 6, flexWrap: "wrap", marginTop: 8 }}>
+        {urls.map((url, i) => (
+          <img
+            key={i} src={url} alt={`첨부 ${i + 1}`}
+            onClick={() => setOpen(i)}
+            style={{
+              width: 100, height: 68, objectFit: "cover", borderRadius: 8,
+              border: "1px solid var(--border)", cursor: "pointer",
+            }}
+          />
+        ))}
+      </div>
+      {overlay}
+    </>
+  );
+}
+
+/* ── URL auto-link helper ──────────────────────────── */
+function renderWithLinks(text: string) {
+  const urlRegex = /(https?:\/\/[^\s]+)/g;
+  const parts = text.split(urlRegex);
+  return parts.map((part, i) =>
+    urlRegex.test(part) ? (
+      <a key={i} href={part} target="_blank" rel="noopener noreferrer"
+        style={{ color: "#4a9eff", wordBreak: "break-all" }}>
+        {part.length > 60 ? part.slice(0, 60) + "..." : part}
+      </a>
+    ) : part
+  );
+}
+
 /* ── log item: view / edit ──────────────────────────── */
 function LogItem({
   log, saving,
@@ -64,52 +151,45 @@ function LogItem({
 }: {
   log: ActivityLog;
   saving: boolean;
-  onUpdate: (id: string, content: string, visible: boolean) => Promise<void>;
+  onUpdate: (id: string, content: string) => Promise<void>;
   onDelete: (id: string) => Promise<void>;
 }) {
   const [editing,   setEditing]   = useState(false);
   const [draft,     setDraft]     = useState(log.content);
-  const [visible,   setVisible]   = useState(log.visible_to_client);
   const [confirming,setConfirming] = useState(false);
 
   async function save() {
-    await onUpdate(log.id, draft, visible);
+    await onUpdate(log.id, draft);
     setEditing(false);
   }
 
-  const color = ACTION_COLOR[log.action_type];
+  const lt = log.log_type ?? (log.visible_to_client ? "work" : "memo");
+  const meta = LOG_TYPE_META[lt];
 
   return (
-    <li style={{ padding: "12px 0", borderBottom: "1px solid rgba(255,255,255,0.05)" }}>
+    <li style={{ padding: "12px 0", borderBottom: "1px solid var(--overlay-3)", opacity: lt === "memo" ? 0.85 : 1 }}>
       {/* header row */}
       <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 6 }}>
         <span style={{
-          padding: "2px 8px", borderRadius: 100, fontSize: 10, fontWeight: 800,
-          background: `${color}1a`, color, border: `1px solid ${color}33`,
+          fontSize: 10, fontWeight: 600, padding: "2px 6px",
+          borderRadius: 4, background: meta.bg, color: meta.color,
         }}>
-          {ACTION_LABEL[log.action_type]}
+          {meta.badge}
         </span>
         <span style={{ fontSize: 11, color: "var(--tdim)", flex: 1 }}>
           {new Date(log.created_at).toLocaleDateString("ko-KR", { month: "short", day: "numeric" })}
         </span>
-        <span style={{
-          fontSize: 10, fontWeight: 700, padding: "1px 7px", borderRadius: 100,
-          background: log.visible_to_client ? "rgba(61,220,132,0.12)" : "rgba(255,255,255,0.05)",
-          color: log.visible_to_client ? "#34C759" : "var(--tdim)",
-        }}>
-          {log.visible_to_client ? "공개" : "비공개"}
-        </span>
 
         {!editing && (
           <>
-            <button type="button" onClick={() => { setDraft(log.content); setVisible(log.visible_to_client); setEditing(true); }}
+            <button type="button" onClick={() => { setDraft(log.content); setEditing(true); }}
               style={{ fontSize: 11, color: "var(--tsub)", background: "none", cursor: "pointer", padding: "2px 6px", borderRadius: 6, border: "1px solid var(--border)" }}>
               수정
             </button>
             {confirming ? (
               <>
                 <button type="button" onClick={() => void onDelete(log.id)} disabled={saving}
-                  style={{ fontSize: 11, color: "#ef4444", background: "rgba(239,68,68,0.12)", cursor: "pointer", padding: "2px 8px", borderRadius: 6, border: "1px solid rgba(239,68,68,0.3)", fontWeight: 700 }}>
+                  style={{ fontSize: 11, color: "var(--error)", background: "var(--error-bg)", cursor: "pointer", padding: "2px 8px", borderRadius: 6, border: "1px solid var(--error-border)", fontWeight: 700 }}>
                   삭제 확인
                 </button>
                 <button type="button" onClick={() => setConfirming(false)}
@@ -130,20 +210,8 @@ function LogItem({
       {/* content */}
       {editing ? (
         <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-          <textarea
-            autoFocus
-            value={draft}
-            onChange={(e) => setDraft(e.target.value)}
-            rows={3}
-            className="apple-textarea"
-          />
-          <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-            <label style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 12, color: "var(--tsub)", cursor: "pointer", flex: 1 }}>
-              <div className={`apple-toggle${visible ? " on" : ""}`} onClick={() => setVisible((v) => !v)}>
-                <div className="apple-toggle-knob" />
-              </div>
-              고객 공개
-            </label>
+          <textarea autoFocus value={draft} onChange={(e) => setDraft(e.target.value)} rows={3} className="apple-textarea" />
+          <div style={{ display: "flex", alignItems: "center", gap: 8, justifyContent: "flex-end" }}>
             <button type="button" onClick={() => setEditing(false)}
               style={{ fontSize: 12, color: "var(--tsub)", background: "none", cursor: "pointer", padding: "5px 12px", borderRadius: 8, border: "1px solid var(--border)" }}>
               취소
@@ -155,80 +223,176 @@ function LogItem({
           </div>
         </div>
       ) : (
-        <p style={{ fontSize: 13, color: "var(--text)", lineHeight: 1.65, whiteSpace: "pre-wrap", wordBreak: "break-word" }}>
-          {log.content}
-        </p>
+        <>
+          <p style={{ fontSize: 13, color: "var(--text)", lineHeight: 1.7, whiteSpace: "pre-wrap", wordBreak: "break-word" }}>
+            {renderWithLinks(log.content)}
+          </p>
+          <ImageThumbnails urls={log.image_urls ?? []} />
+        </>
       )}
     </li>
   );
 }
 
-/* ── quick log composer ─────────────────────────────── */
+/* ── quick log composer with 2 buttons ────────────── */
 function LogComposer({
-  nodeKey, saving, onCreate,
+  nodeKey, saving, onCreate, clientId, accessToken,
 }: {
   nodeKey: string;
   saving: boolean;
-  onCreate: (input: { node_key: string; action_type: ActionType; content: string; visible_to_client: boolean }) => Promise<{ error: string | null }>;
+  onCreate: (input: { node_key: string; log_type: LogType; content: string; image_urls?: string[] }) => Promise<{ error: string | null }>;
+  clientId: string;
+  accessToken: string;
 }) {
-  const [activeType, setActiveType] = useState<ActionType | null>(null);
-  const [draft,      setDraft]      = useState("");
-  const [visible,    setVisible]    = useState(true);
+  const [activeInput, setActiveInput] = useState<LogType | null>(null);
+  const [draft, setDraft] = useState("");
+  const [pendingImages, setPendingImages] = useState<{ file: File; preview: string }[]>([]);
+  const [uploading, setUploading] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const addPendingImage = useCallback((file: File) => {
+    if (file.size > 5 * 1024 * 1024) { alert("이미지 크기는 5MB 이하만 가능합니다."); return; }
+    setPendingImages((prev) => prev.length >= 5 ? prev : [...prev, { file, preview: URL.createObjectURL(file) }]);
+  }, []);
+
+  const removePendingImage = (index: number) => {
+    setPendingImages((prev) => { URL.revokeObjectURL(prev[index].preview); return prev.filter((_, i) => i !== index); });
+  };
+
+  const handlePaste = (e: React.ClipboardEvent) => {
+    const items = e.clipboardData?.items;
+    if (!items) return;
+    for (const item of Array.from(items)) {
+      if (item.type.startsWith("image/")) { e.preventDefault(); const file = item.getAsFile(); if (file) addPendingImage(file); }
+    }
+  };
+
+  const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    Array.from(e.target.files ?? []).filter((f) => f.type.startsWith("image/")).forEach(addPendingImage);
+    e.target.value = "";
+  };
+
+  async function uploadImages(): Promise<string[]> {
+    if (pendingImages.length === 0) return [];
+    setUploading(true);
+    try {
+      return await Promise.all(
+        pendingImages.map(async (img) => {
+          const formData = new FormData();
+          formData.append("file", img.file);
+          formData.append("client_id", clientId);
+          const res = await fetch("/api/admin/upload", { method: "POST", headers: { Authorization: `Bearer ${accessToken}` }, body: formData });
+          const json = (await res.json()) as { url?: string; error?: string };
+          if (!res.ok) throw new Error(json.error ?? "업로드 실패");
+          return json.url!;
+        }),
+      );
+    } finally { setUploading(false); }
+  }
+
+  function resetForm() {
+    setDraft("");
+    setActiveInput(null);
+    pendingImages.forEach((img) => URL.revokeObjectURL(img.preview));
+    setPendingImages([]);
+  }
 
   async function submit() {
-    if (!activeType || !draft.trim()) return;
-    const result = await onCreate({ node_key: nodeKey, action_type: activeType, content: draft, visible_to_client: visible });
-    if (!result.error) { setDraft(""); setActiveType(null); }
+    if (!activeInput || !draft.trim()) return;
+    try {
+      const imageUrls = await uploadImages();
+      const result = await onCreate({
+        node_key: nodeKey,
+        log_type: activeInput,
+        content: draft,
+        image_urls: imageUrls.length > 0 ? imageUrls : undefined,
+      });
+      if (!result.error) resetForm();
+    } catch (err) {
+      alert(err instanceof Error ? err.message : "업로드에 실패했습니다.");
+    }
   }
+
+  const toggleInput = (type: LogType) => {
+    if (activeInput === type) { resetForm(); } else { setActiveInput(type); setDraft(""); pendingImages.forEach((img) => URL.revokeObjectURL(img.preview)); setPendingImages([]); }
+  };
+
+  const activeMeta = activeInput ? LOG_TYPE_META[activeInput] : null;
 
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-      {/* Quick type buttons */}
-      <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
-        {ACTION_OPTIONS.map((opt) => {
-          const active = activeType === opt.value;
+      {/* 2 buttons */}
+      <div style={{ display: "flex", gap: 8 }}>
+        {(["memo", "work"] as const).map((type) => {
+          const m = LOG_TYPE_META[type];
+          const active = activeInput === type;
           return (
-            <button key={opt.value} type="button"
-              onClick={() => { setActiveType(active ? null : opt.value); if (active) setDraft(""); }}
+            <button key={type} type="button" onClick={() => toggleInput(type)}
               style={{
-                padding: "5px 13px", borderRadius: 100, fontSize: 12, fontWeight: 600,
-                cursor: "pointer", transition: "all 0.15s",
-                background: active ? `${opt.color}1a` : "rgba(255,255,255,0.04)",
-                border: active ? `1px solid ${opt.color}55` : "1px solid var(--border)",
-                color: active ? opt.color : "var(--tsub)",
+                flex: 1, padding: "10px", fontSize: 13, fontWeight: 600, borderRadius: 8, cursor: "pointer",
+                background: active ? m.bg : "transparent",
+                border: active ? `1px solid ${m.color}` : "1px solid var(--border)",
+                color: active ? m.color : "#72728a",
               }}
             >
-              {opt.label}
+              {type === "memo" ? "📝 내부 메모" : "✅ 작업 기록"}
             </button>
           );
         })}
       </div>
 
-      {/* Inline input when type selected */}
-      {activeType && (
-        <div style={{ display: "flex", flexDirection: "column", gap: 8, animation: "fadeIn 0.15s ease" }}>
+      {/* Input form */}
+      {activeInput && activeMeta && (
+        <div
+          style={{
+            border: `1px solid ${activeMeta.color}`,
+            borderRadius: 10, padding: 12, background: "#060611",
+          }}
+          onPaste={handlePaste}
+          onDrop={(e) => { e.preventDefault(); Array.from(e.dataTransfer.files).filter((f) => f.type.startsWith("image/")).forEach(addPendingImage); }}
+          onDragOver={(e) => e.preventDefault()}
+        >
+          <div style={{ fontSize: 11, color: activeMeta.color, marginBottom: 8, fontWeight: 600 }}>
+            {activeInput === "memo" ? "🔒 내부 메모 — 관리자만 볼 수 있습니다" : "👁 작업 기록 — 고객에게 공개됩니다"}
+          </div>
           <textarea
-            autoFocus
-            className="apple-textarea"
-            rows={3}
-            placeholder={`${ACTION_LABEL[activeType]} 내용을 입력하세요`}
-            value={draft}
-            disabled={saving}
+            autoFocus className="apple-textarea" rows={3}
+            placeholder={activeInput === "memo" ? "내부 참고용 메모를 작성하세요..." : "고객에게 보여질 작업 내용을 작성하세요..."}
+            value={draft} disabled={saving || uploading}
             onChange={(e) => setDraft(e.target.value)}
             onKeyDown={(e) => { if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) void submit(); }}
+            style={{ background: "transparent", border: "none", width: "100%", color: "#eaeaef", fontSize: 13, lineHeight: 1.7, resize: "vertical", outline: "none" }}
           />
-          <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-            <label style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 12, color: "var(--tsub)", cursor: "pointer", flex: 1 }}>
-              <div className={`apple-toggle${visible ? " on" : ""}`} onClick={() => setVisible((v) => !v)}>
-                <div className="apple-toggle-knob" />
-              </div>
-              고객 공개
+
+          {/* Image previews */}
+          {pendingImages.length > 0 && (
+            <div style={{ display: "flex", gap: 6, flexWrap: "wrap", marginTop: 8, paddingTop: 8, borderTop: "1px solid #1e1e32" }}>
+              {pendingImages.map((img, i) => (
+                <div key={i} style={{ position: "relative", width: 64, height: 64 }}>
+                  <img src={img.preview} alt="" style={{ width: 64, height: 64, objectFit: "cover", borderRadius: 6, border: "1px solid #1e1e32" }} />
+                  <button type="button" onClick={() => removePendingImage(i)}
+                    style={{ position: "absolute", top: -4, right: -4, width: 16, height: 16, borderRadius: "50%", background: "#e94560", color: "#fff", border: "none", fontSize: 9, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                    ✕
+                  </button>
+                </div>
+              ))}
+            </div>
+          )}
+
+          {/* Bottom bar */}
+          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginTop: 10, paddingTop: 10, borderTop: "1px solid #1e1e32" }}>
+            <label style={{ padding: "4px 8px", fontSize: 12, color: "#72728a", border: "1px solid #1e1e32", borderRadius: 6, cursor: "pointer" }}>
+              📎 이미지
+              <input ref={fileInputRef} type="file" accept="image/*" multiple hidden onChange={handleFileSelect} />
             </label>
-            <span style={{ fontSize: 10, color: "var(--tdim)" }}>⌘↵ 저장</span>
-            <button type="button" onClick={() => void submit()} disabled={saving || !draft.trim()}
-              className="apple-save-btn"
-              style={{ padding: "6px 18px", opacity: (!draft.trim() || saving) ? 0.4 : 1 }}>
-              {saving ? "…" : "저장"}
+            <button type="button" onClick={() => void submit()} disabled={saving || uploading || !draft.trim()}
+              style={{
+                padding: "6px 16px", fontSize: 12, fontWeight: 700, color: "#fff", border: "none", borderRadius: 8, cursor: "pointer",
+                background: activeInput === "memo" ? "#72728a" : "#34c759",
+                opacity: (!draft.trim() || saving || uploading) ? 0.4 : 1,
+              }}
+            >
+              {uploading ? "업로드 중..." : saving ? "저장 중..." : activeInput === "memo" ? "메모 저장" : "기록 저장"}
             </button>
           </div>
         </div>
@@ -237,10 +401,289 @@ function LogComposer({
   );
 }
 
+/* ── global floating save toast ──────────────────── */
+function GlobalSaveToast({ count, onSave, onDiscard, isSaving, saveSuccess }: {
+  count: number;
+  onSave: () => void;
+  onDiscard: () => void;
+  isSaving: boolean;
+  saveSuccess: boolean;
+}) {
+  const content = saveSuccess ? (
+    <div className="save-toast save-toast--success">
+      <span style={{ color: "#34c759", fontSize: 13, fontWeight: 600 }}>
+        ✓ 저장 완료
+      </span>
+    </div>
+  ) : (
+    <div className="save-toast">
+      <span style={{ fontSize: 13, color: "#eaeaef", fontWeight: 600 }}>
+        변경한 항목을 저장하시겠습니까?
+      </span>
+      <div style={{ display: "flex", gap: 8 }}>
+        <button type="button" onClick={onDiscard} className="save-toast-btn-cancel">취소</button>
+        <button type="button" onClick={onSave} disabled={isSaving} className="save-toast-btn-save">
+          {isSaving ? "저장 중..." : "저장"}
+        </button>
+      </div>
+    </div>
+  );
+
+  if (typeof document === "undefined") return content;
+  return createPortal(content, document.body);
+}
+
+/* ── node card (no local save — uses global pending) ─ */
+function NodeCard({
+  node,
+  subNodes,
+  nodeLogs,
+  displayMeta,
+  showStatusControl,
+  saving: globalSaving,
+  pendingChanges,
+  onStatusChange,
+  onTaskToggle,
+  createLog,
+  updateLog,
+  deleteLog,
+  clientId,
+  accessToken,
+}: {
+  node: NodeRecord;
+  subNodes: SubNode[];
+  nodeLogs: ActivityLog[];
+  displayMeta: { emoji: string; label: string; description: string };
+  showStatusControl: boolean;
+  saving: boolean;
+  pendingChanges: PendingChanges;
+  onStatusChange: (nodeKey: string, status: NodeStatus) => void;
+  onTaskToggle: (taskId: string, checked: boolean) => void;
+  createLog: (input: { node_key: string; log_type: LogType; content: string; image_urls?: string[] }) => Promise<{ error: string | null }>;
+  updateLog: (logId: string, content: string) => Promise<{ error: string | null }>;
+  deleteLog: (logId: string) => Promise<{ error: string | null }>;
+  clientId: string;
+  accessToken: string;
+}) {
+  // Effective status (global pending override or server)
+  const pendingNodeStatus = pendingChanges.nodes[node.node_key]?.status;
+  const effectiveStatus = pendingNodeStatus ?? node.status;
+  const statusOpt = STATUS_OPTIONS.find((s) => s.value === effectiveStatus)!;
+
+  // Check if this node has pending changes
+  const nodeHasChanges = pendingChanges.nodes[node.node_key] !== undefined
+    || subNodes.some((sn) => sn.id in pendingChanges.tasks);
+
+  // Effective task states
+  const effectiveSubNodes = subNodes.map((sn) => ({
+    ...sn,
+    is_done: sn.id in pendingChanges.tasks ? pendingChanges.tasks[sn.id] : sn.is_done,
+  }));
+
+  const doneCount = effectiveSubNodes.filter((s) => s.is_done).length;
+  const allDone = effectiveSubNodes.length > 0 && doneCount === effectiveSubNodes.length;
+  const sortedSubs = [...effectiveSubNodes].sort((a, b) => {
+    if (a.is_done === b.is_done) return a.sort_order - b.sort_order;
+    return a.is_done ? 1 : -1;
+  });
+
+  return (
+    <article className="apple-node-card" style={{ position: "relative", display: "flex", flexDirection: "column" }}>
+      {/* Node header */}
+      <div className="apple-node-top">
+        <div className="apple-node-icon">{displayMeta.emoji}</div>
+        <div className="apple-node-title-group">
+          <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+            <h3 className="apple-node-title">{displayMeta.label}</h3>
+            {nodeHasChanges && (
+              <span style={{ width: 6, height: 6, borderRadius: "50%", background: "#ff9500", display: "inline-block", flexShrink: 0 }} title="미저장 변경사항" />
+            )}
+          </div>
+          <p className="apple-node-desc">{displayMeta.description}</p>
+        </div>
+        <span className="apple-node-badge" style={{ background: statusOpt.bg, color: statusOpt.color }}>
+          {statusOpt.label}
+        </span>
+      </div>
+
+      {/* Status selector */}
+      {showStatusControl && (
+        <div className="apple-section">
+          <p className="apple-section-label">상태 변경</p>
+          <SegControl
+            options={STATUS_OPTIONS}
+            value={effectiveStatus}
+            onChange={(v) => onStatusChange(node.node_key, v)}
+          />
+        </div>
+      )}
+
+      {/* Sub-node checklist */}
+      {effectiveSubNodes.length > 0 && (
+        <div className="apple-section">
+          <div className="apple-section-row">
+            <p className="apple-section-label">태스크</p>
+            <span className="apple-progress-chip" style={{ fontVariantNumeric: "tabular-nums" }}>{doneCount}/{effectiveSubNodes.length}</span>
+          </div>
+          <div className="apple-progress-bar">
+            <div className="apple-progress-fill"
+              style={{ width: `${effectiveSubNodes.length ? (doneCount / effectiveSubNodes.length) * 100 : 0}%`, background: allDone ? "var(--status-active)" : statusOpt.color, transition: "width 0.4s ease, background 0.3s" }} />
+          </div>
+          {allDone && (
+            <div style={{ padding: "8px 12px", background: "var(--status-active-bg)", border: "1px solid rgba(52,199,89,0.15)", borderRadius: 8, textAlign: "center", fontSize: 13, fontWeight: 700, color: "var(--status-active)" }}>
+              모든 설정이 완료되었습니다! 🎉
+            </div>
+          )}
+          <ul className="apple-checklist">
+            {sortedSubs.map((sn) => (
+              <li key={sn.id}>
+                <div className="apple-checklist-item">
+                  <label className="apple-checkbox-label">
+                    <input type="checkbox" className="apple-checkbox"
+                      checked={sn.is_done}
+                      onChange={(e) => onTaskToggle(sn.id, e.target.checked)} />
+                    <span style={{
+                      color: sn.is_done ? "var(--tdim)" : "var(--text)",
+                      textDecoration: sn.is_done ? "line-through" : "none",
+                      textDecorationColor: sn.is_done ? "var(--tdim)" : undefined,
+                      transition: "color 0.25s, text-decoration 0.25s",
+                    }}>
+                      {sn.label}
+                    </span>
+                  </label>
+                </div>
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
+
+      {/* Existing logs */}
+      {nodeLogs.length > 0 && (
+        <div className="apple-section">
+          <div className="apple-section-row">
+            <p className="apple-section-label">활동 기록</p>
+            <span className="apple-progress-chip">{nodeLogs.length}건</span>
+          </div>
+          <ul style={{ listStyle: "none", maxHeight: 320, overflowY: "auto" }}>
+            {nodeLogs.map((log) => (
+              <LogItem
+                key={log.id}
+                log={log}
+                saving={globalSaving}
+                onUpdate={async (id, content) => { await updateLog(id, content); }}
+                onDelete={async (id) => { await deleteLog(id); }}
+              />
+            ))}
+          </ul>
+        </div>
+      )}
+
+      {/* Quick log composer */}
+      <div className="apple-section apple-log-form">
+        {nodeLogs.length === 0 && <p className="apple-section-label">활동 기록</p>}
+        <LogComposer
+          nodeKey={node.node_key}
+          saving={globalSaving}
+          onCreate={createLog}
+          clientId={clientId}
+          accessToken={accessToken}
+        />
+      </div>
+    </article>
+  );
+}
+
 /* ── main component ─────────────────────────────────── */
 export function ClientDetailView({ clientId }: { clientId: string }) {
-  const { data, error, loading, saving, toggleSubNode, updateNodeStatus, createLog, updateLog, deleteLog } =
+  const { session } = useAuth();
+  const { data, error, loading, saving, refresh, toggleSubNode, updateNodeStatus, createLog, updateLog, deleteLog } =
     useClientDetail(clientId);
+
+  // ── Global pending changes ──
+  const [pendingChanges, setPendingChanges] = useState<PendingChanges>(EMPTY_PENDING);
+  const [isSaving, setIsSaving] = useState(false);
+  const [saveSuccess, setSaveSuccess] = useState(false);
+
+  const changedNodeCount = Object.keys(pendingChanges.nodes).length;
+  const changedTaskCount = Object.keys(pendingChanges.tasks).length;
+  const hasChanges = changedNodeCount > 0 || changedTaskCount > 0;
+  const changeCount = changedNodeCount + (changedTaskCount > 0 ? 1 : 0);
+
+  // Warn before leaving with unsaved changes
+  useEffect(() => {
+    const handler = (e: BeforeUnloadEvent) => {
+      if (hasChanges) { e.preventDefault(); e.returnValue = ""; }
+    };
+    window.addEventListener("beforeunload", handler);
+    return () => window.removeEventListener("beforeunload", handler);
+  }, [hasChanges]);
+
+  const recordNodeStatusChange = useCallback((nodeKey: string, newStatus: NodeStatus) => {
+    // If reverted to server value, remove from pending
+    const serverNode = data?.nodes.find((n) => n.node_key === nodeKey);
+    if (serverNode && serverNode.status === newStatus) {
+      setPendingChanges((prev) => {
+        const next = { ...prev, nodes: { ...prev.nodes } };
+        delete next.nodes[nodeKey];
+        return next;
+      });
+    } else {
+      setPendingChanges((prev) => ({
+        ...prev,
+        nodes: { ...prev.nodes, [nodeKey]: { status: newStatus } },
+      }));
+    }
+  }, [data?.nodes]);
+
+  const recordTaskToggle = useCallback((taskId: string, checked: boolean) => {
+    const original = data?.subNodes.find((s) => s.id === taskId);
+    if (original && original.is_done === checked) {
+      setPendingChanges((prev) => {
+        const next = { ...prev, tasks: { ...prev.tasks } };
+        delete next.tasks[taskId];
+        return next;
+      });
+    } else {
+      setPendingChanges((prev) => ({
+        ...prev,
+        tasks: { ...prev.tasks, [taskId]: checked },
+      }));
+    }
+  }, [data?.subNodes]);
+
+  const handleGlobalSave = useCallback(async () => {
+    setIsSaving(true);
+    try {
+      const promises: Promise<{ error: string | null }>[] = [];
+
+      for (const [nodeKey, changes] of Object.entries(pendingChanges.nodes)) {
+        promises.push(updateNodeStatus(nodeKey, changes.status));
+      }
+
+      for (const [taskId, checked] of Object.entries(pendingChanges.tasks)) {
+        promises.push(toggleSubNode(taskId, checked));
+      }
+
+      const results = await Promise.all(promises);
+      const hasError = results.some((r) => r.error !== null);
+
+      if (!hasError) {
+        setPendingChanges(EMPTY_PENDING);
+        setSaveSuccess(true);
+        await refresh();
+        setTimeout(() => setSaveSuccess(false), 1200);
+      }
+    } catch {
+      // Keep pending changes on error
+    } finally {
+      setIsSaving(false);
+    }
+  }, [pendingChanges, updateNodeStatus, toggleSubNode, refresh]);
+
+  const handleGlobalDiscard = useCallback(() => {
+    setPendingChanges(EMPTY_PENDING);
+  }, []);
 
   const groupedSubNodes = useMemo(() => {
     return (data?.subNodes ?? []).reduce<Record<string, SubNode[]>>((acc, sn) => {
@@ -262,6 +705,8 @@ export function ClientDetailView({ clientId }: { clientId: string }) {
   const sortedNodes = data.nodes
     .slice()
     .sort((a, b) => NODE_META[a.node_key].order - NODE_META[b.node_key].order);
+
+  const accessToken = session?.access_token ?? "";
 
   return (
     <div className="dashboard-content">
@@ -291,7 +736,7 @@ export function ClientDetailView({ clientId }: { clientId: string }) {
             </div>
             <div className="apple-meta-item">
               <span className="apple-meta-label">Active</span>
-              <span className="apple-meta-value" style={{ color: "#34C759" }}>
+              <span className="apple-meta-value" style={{ color: "var(--status-active)" }}>
                 {data.nodes.filter((n) => n.status === "active").length}개
               </span>
             </div>
@@ -303,17 +748,22 @@ export function ClientDetailView({ clientId }: { clientId: string }) {
             <span className="sec-label" style={{ marginBottom: 0 }}>전체 활동 로그</span>
             <span className="apple-log-count">{data.activityLogs.length}건</span>
           </div>
-          <ul className="apple-log-list" style={{ maxHeight: 420, overflowY: "auto" }}>
+          <ul className="apple-log-list" style={{ maxHeight: 240, overflowY: "auto" }}>
             {[...data.activityLogs].sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime()).map((log) => (
               <li key={log.id} className="apple-log-item">
-                <div className="apple-log-dot" style={{ background: log.visible_to_client ? "#34C759" : "#5a6374" }} />
+                <div className="apple-log-dot" style={{ background: log.visible_to_client ? "var(--status-active)" : "#5a6374" }} />
                 <div className="apple-log-body">
                   <span className="apple-log-node">
                     {NODE_META[log.node_key].emoji} {NODE_META[log.node_key].label}
                     {" · "}
-                    <span style={{ color: ACTION_COLOR[log.action_type] }}>{ACTION_LABEL[log.action_type]}</span>
+                    <span style={{ color: LOG_TYPE_META[log.log_type ?? (log.visible_to_client ? "work" : "memo")].color }}>
+                      {LOG_TYPE_META[log.log_type ?? (log.visible_to_client ? "work" : "memo")].label}
+                    </span>
                   </span>
                   <span className="apple-log-content">{log.content}</span>
+                  {(log.image_urls?.length ?? 0) > 0 && (
+                    <span style={{ fontSize: 10, color: "var(--tdim)", marginLeft: 4 }}>📎 {log.image_urls.length}</span>
+                  )}
                 </div>
                 <span className="apple-log-date">
                   {new Date(log.created_at).toLocaleDateString("ko-KR", { month: "short", day: "numeric" })}
@@ -329,132 +779,72 @@ export function ClientDetailView({ clientId }: { clientId: string }) {
 
       {/* ── Node cards ── */}
       <section className="apple-node-grid">
-        {sortedNodes.map((node) => {
-          const meta      = NODE_META[node.node_key];
+        {sortedNodes.flatMap((node) => {
           const subNodes  = groupedSubNodes[node.node_key] ?? [];
           const nodeLogs  = groupedLogs[node.node_key] ?? [];
-          const doneCount = subNodes.filter((s) => s.is_done).length;
-          const statusOpt = STATUS_OPTIONS.find((s) => s.value === node.status)!;
 
-          return (
-            <article key={node.id} className="apple-node-card">
+          // lead_nurture → split into 환자 설득 + 방문 예정 cards
+          if (node.node_key === "lead_nurture") {
+            return Object.entries(LEAD_NURTURE_SPLIT).map(([splitKey, splitMeta]) => {
+              const [minSort, maxSort] = splitMeta.sortRange;
+              const splitSubs = subNodes.filter((s) => s.sort_order >= minSort && s.sort_order <= maxSort);
 
-              {/* Node header */}
-              <div className="apple-node-top">
-                <div className="apple-node-icon">{meta.emoji}</div>
-                <div className="apple-node-title-group">
-                  <h3 className="apple-node-title">{meta.label}</h3>
-                  <p className="apple-node-desc">{meta.description}</p>
-                </div>
-                <span className="apple-node-badge" style={{ background: statusOpt.bg, color: statusOpt.color }}>
-                  {statusOpt.label}
-                </span>
-              </div>
-
-              {/* Status selector */}
-              <div className="apple-section">
-                <p className="apple-section-label">상태 변경</p>
-                <SegControl
-                  options={STATUS_OPTIONS}
-                  value={node.status}
-                  onChange={(v) => void updateNodeStatus(node.node_key, v)}
-                  disabled={saving}
-                />
-              </div>
-
-              {/* Sub-node checklist */}
-              {subNodes.length > 0 && (() => {
-                const allDone = doneCount === subNodes.length;
-                // Sort: undone first, done last (within original order)
-                const sortedSubs = [...subNodes].sort((a, b) => {
-                  if (a.is_done === b.is_done) return a.sort_order - b.sort_order;
-                  return a.is_done ? 1 : -1;
-                });
-                return (
-                  <div className="apple-section">
-                    <div className="apple-section-row">
-                      <p className="apple-section-label">태스크</p>
-                      <span className="apple-progress-chip" style={{ fontVariantNumeric: "tabular-nums" }}>{doneCount}/{subNodes.length}</span>
-                    </div>
-                    <div className="apple-progress-bar">
-                      <div className="apple-progress-fill"
-                        style={{ width: `${subNodes.length ? (doneCount / subNodes.length) * 100 : 0}%`, background: allDone ? "#34C759" : statusOpt.color, transition: "width 0.4s ease, background 0.3s" }} />
-                    </div>
-                    {allDone && (
-                      <div style={{ padding: "8px 12px", background: "rgba(52,199,89,0.08)", border: "1px solid rgba(52,199,89,0.15)", borderRadius: 8, textAlign: "center", fontSize: 13, fontWeight: 700, color: "#34C759" }}>
-                        모든 설정이 완료되었습니다! 🎉
-                      </div>
-                    )}
-                    <ul className="apple-checklist">
-                      {sortedSubs.map((sn) => {
-                        const showDivider = node.node_key === "lead_nurture" && sn.sort_order === 4 && !sn.is_done;
-                        return (
-                          <li key={sn.id}>
-                            {showDivider && (
-                              <div style={{ padding: "8px 0 4px" }}>
-                                <span style={{ fontSize: 10, fontWeight: 800, letterSpacing: "0.7px", textTransform: "uppercase", color: "var(--gW)" }}>
-                                  ⭐ 유망 리드 → 초진 이벤트
-                                </span>
-                              </div>
-                            )}
-                            <div className="apple-checklist-item">
-                              <label className="apple-checkbox-label">
-                                <input type="checkbox" className="apple-checkbox"
-                                  checked={sn.is_done} disabled={saving}
-                                  onChange={(e) => void toggleSubNode(sn.id, e.target.checked)} />
-                                <span style={{
-                                  color: sn.is_done ? "var(--tdim)" : "var(--text)",
-                                  textDecoration: sn.is_done ? "line-through" : "none",
-                                  textDecorationColor: sn.is_done ? "var(--tdim)" : undefined,
-                                  transition: "color 0.25s, text-decoration 0.25s",
-                                }}>
-                                  {sn.label}
-                                </span>
-                              </label>
-                            </div>
-                          </li>
-                        );
-                      })}
-                    </ul>
-                  </div>
-                );
-              })()}
-
-              {/* ── Existing logs ── */}
-              {nodeLogs.length > 0 && (
-                <div className="apple-section">
-                  <div className="apple-section-row">
-                    <p className="apple-section-label">활동 기록</p>
-                    <span className="apple-progress-chip">{nodeLogs.length}건</span>
-                  </div>
-                  <ul style={{ listStyle: "none" }}>
-                    {nodeLogs.map((log) => (
-                      <LogItem
-                        key={log.id}
-                        log={log}
-                        saving={saving}
-                        onUpdate={async (id, content, visible) => { await updateLog(id, content, visible); }}
-                        onDelete={async (id) => { await deleteLog(id); }}
-                      />
-                    ))}
-                  </ul>
-                </div>
-              )}
-
-              {/* ── Quick log composer ── */}
-              <div className="apple-section apple-log-form">
-                {nodeLogs.length === 0 && <p className="apple-section-label">활동 기록</p>}
-                <LogComposer
-                  nodeKey={node.node_key}
+              return (
+                <NodeCard
+                  key={`${node.id}-${splitKey}`}
+                  node={node}
+                  subNodes={splitSubs}
+                  nodeLogs={nodeLogs}
+                  displayMeta={splitMeta}
+                  showStatusControl
                   saving={saving}
-                  onCreate={createLog}
+                  pendingChanges={pendingChanges}
+                  onStatusChange={recordNodeStatusChange}
+                  onTaskToggle={recordTaskToggle}
+                  createLog={createLog}
+                  updateLog={updateLog}
+                  deleteLog={deleteLog}
+                  clientId={clientId}
+                  accessToken={accessToken}
                 />
-              </div>
+              );
+            });
+          }
 
-            </article>
-          );
+          // Normal node card
+          const meta = NODE_META[node.node_key];
+          return [(
+            <NodeCard
+              key={node.id}
+              node={node}
+              subNodes={subNodes}
+              nodeLogs={nodeLogs}
+              displayMeta={meta}
+              showStatusControl
+              saving={saving}
+              pendingChanges={pendingChanges}
+              onStatusChange={recordNodeStatusChange}
+              onTaskToggle={recordTaskToggle}
+              createLog={createLog}
+              updateLog={updateLog}
+              deleteLog={deleteLog}
+              clientId={clientId}
+              accessToken={accessToken}
+            />
+          )];
         })}
       </section>
+
+      {/* ── Global floating save toast ── */}
+      {(hasChanges || saveSuccess) && (
+        <GlobalSaveToast
+          count={changeCount}
+          onSave={() => void handleGlobalSave()}
+          onDiscard={handleGlobalDiscard}
+          isSaving={isSaving}
+          saveSuccess={saveSuccess}
+        />
+      )}
     </div>
   );
 }

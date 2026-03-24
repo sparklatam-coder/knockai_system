@@ -91,7 +91,7 @@ export function UpgradeModal({
       <div
         className="popup"
         onClick={(e) => e.stopPropagation()}
-        style={{ maxWidth: 480, textAlign: "center" }}
+        style={{ maxWidth: 520, textAlign: "center" }}
       >
         <button
           className="popup-close"
@@ -107,8 +107,8 @@ export function UpgradeModal({
             width: 72,
             height: 72,
             borderRadius: "50%",
-            background: "rgba(255,255,255,0.04)",
-            border: "1px solid rgba(255,255,255,0.08)",
+            background: "var(--overlay-3)",
+            border: "1px solid var(--overlay-4)",
             display: "flex",
             alignItems: "center",
             justifyContent: "center",
@@ -153,7 +153,7 @@ export function UpgradeModal({
           {/* Current */}
           <div
             style={{
-              background: "rgba(255,255,255,0.03)",
+              background: "var(--overlay-2)",
               border: `1px solid ${currentInfo.color}33`,
               borderRadius: 12,
               padding: "14px 12px",
@@ -232,9 +232,9 @@ export function UpgradeModal({
         {newNodes.length > 0 && (
           <div
             style={{
-              background: "rgba(255,255,255,0.02)",
+              background: "var(--overlay-1)",
               border: "1px solid var(--border)",
-              borderRadius: 10,
+              borderRadius: 12,
               padding: "12px 16px",
               marginBottom: 20,
               textAlign: "left",
@@ -289,7 +289,7 @@ export function UpgradeModal({
         {/* 담당자 연락처 */}
         <div
           style={{
-            background: "rgba(255,255,255,0.03)",
+            background: "var(--overlay-2)",
             border: "1px solid var(--border)",
             borderRadius: 12,
             padding: "18px 20px",
@@ -336,8 +336,8 @@ export function UpgradeModal({
             style={{
               padding: "14px 0",
               borderRadius: 12,
-              background: "rgba(52,199,89,0.12)",
-              color: "#34C759",
+              background: "var(--status-active-bg)",
+              color: "var(--status-active)",
               fontSize: 15,
               fontWeight: 800,
               textAlign: "center",
@@ -359,7 +359,7 @@ export function UpgradeModal({
               style={{
                 flex: 1,
                 padding: "12px 0",
-                borderRadius: 10,
+                borderRadius: 12,
                 border: "1px solid var(--border)",
                 background: "transparent",
                 color: "var(--tsub)",
@@ -379,7 +379,7 @@ export function UpgradeModal({
               style={{
                 flex: 1,
                 padding: "12px 0",
-                borderRadius: 10,
+                borderRadius: 12,
                 border: "none",
                 background: targetInfo.color,
                 color: "#fff",
@@ -411,7 +411,7 @@ export function UpgradeModal({
             transform: "translateX(-50%)",
             padding: "12px 24px",
             borderRadius: 12,
-            background: "rgba(52,199,89,0.95)",
+            background: "var(--status-active)",
             color: "#fff",
             fontSize: 14,
             fontWeight: 700,

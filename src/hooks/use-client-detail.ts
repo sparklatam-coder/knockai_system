@@ -2,13 +2,13 @@
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useAuth } from "@/hooks/use-auth";
-import type { ActionType, ClientDashboardData, NodeStatus } from "@/lib/types";
+import type { ClientDashboardData, LogType, NodeStatus } from "@/lib/types";
 
 interface CreateLogInput {
   node_key: string;
-  action_type: ActionType;
+  log_type: LogType;
   content: string;
-  visible_to_client: boolean;
+  image_urls?: string[];
 }
 
 export function useClientDetail(clientId: string) {
@@ -61,8 +61,6 @@ export function useClientDetail(clientId: string) {
         return { error: "세션이 없습니다." };
       }
 
-      setSaving(true);
-
       const response = await fetch(`/api/admin/clients/${clientId}/nodes`, {
         method: "PATCH",
         headers: {
@@ -77,17 +75,14 @@ export function useClientDetail(clientId: string) {
       });
 
       const json = (await response.json()) as { error?: string };
-      setSaving(false);
 
       if (!response.ok) {
-        setError(json.error ?? "상태 변경에 실패했습니다.");
         return { error: json.error ?? "상태 변경에 실패했습니다." };
       }
 
-      await refresh();
       return { error: null };
     },
-    [clientId, refresh, session?.access_token],
+    [clientId, session?.access_token],
   );
 
   const toggleSubNode = useCallback(
@@ -95,8 +90,6 @@ export function useClientDetail(clientId: string) {
       if (!session?.access_token) {
         return { error: "세션이 없습니다." };
       }
-
-      setSaving(true);
 
       const response = await fetch(`/api/admin/clients/${clientId}/nodes`, {
         method: "PATCH",
@@ -112,17 +105,14 @@ export function useClientDetail(clientId: string) {
       });
 
       const json = (await response.json()) as { error?: string };
-      setSaving(false);
 
       if (!response.ok) {
-        setError(json.error ?? "체크리스트 변경에 실패했습니다.");
         return { error: json.error ?? "체크리스트 변경에 실패했습니다." };
       }
 
-      await refresh();
       return { error: null };
     },
-    [clientId, refresh, session?.access_token],
+    [clientId, session?.access_token],
   );
 
   const createLog = useCallback(
@@ -157,13 +147,13 @@ export function useClientDetail(clientId: string) {
   );
 
   const updateLog = useCallback(
-    async (logId: string, content: string, visibleToClient: boolean) => {
+    async (logId: string, content: string) => {
       if (!session?.access_token) return { error: "세션이 없습니다." };
       setSaving(true);
       const response = await fetch(`/api/admin/clients/${clientId}/logs`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json", Authorization: `Bearer ${session.access_token}` },
-        body: JSON.stringify({ log_id: logId, content, visible_to_client: visibleToClient }),
+        body: JSON.stringify({ log_id: logId, content }),
       });
       const json = (await response.json()) as { error?: string };
       setSaving(false);

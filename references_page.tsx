@@ -296,7 +296,7 @@ export default function ReferencesPage() {
           <span style={{ color: T.accent }}>KNOCK</span> 병원 마케팅
         </Link>
         <div style={{ display: "flex", gap: 20, fontSize: 13, fontWeight: 600 }}>
-          <Link href="/" style={{ color: T.muted, textDecoration: "none" }}>플라이휠</Link>
+          <Link href="/" style={{ color: T.muted, textDecoration: "none" }}>노크 시스템</Link>
           <Link href="/references" style={{ color: T.accent, textDecoration: "none" }}>레퍼런스</Link>
           <Link href="/login" style={{ color: T.muted, textDecoration: "none" }}>로그인</Link>
         </div>
@@ -357,7 +357,7 @@ export default function ReferencesPage() {
           <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))", gap: 14 }}>
             {[
               { step: "01", title: "계약 시 계정 발급", desc: "전용 로그인 제공" },
-              { step: "02", title: "플라이휠 상태 표시", desc: "초록/노랑/회색 실시간" },
+              { step: "02", title: "노크 시스템 상태 표시", desc: "초록/노랑/회색 실시간" },
               { step: "03", title: "활동 로그 기록", desc: "모든 작업 내역 공개" },
               { step: "04", title: "월간 리포트", desc: "성과 요약 제공" },
             ].map((s, i) => (
@@ -482,7 +482,7 @@ export default function ReferencesPage() {
               📞 무료 상담 신청 →
             </a>
             <div style={{ marginTop: 14, fontSize: 12, color: T.dim }}>
-              노크AI · Fillupwithmarketing
+              노크AI · Knock
             </div>
           </div>
         </div>

@@ -1,33 +1,17 @@
 "use client";
 
 import Link from "next/link";
-import { useRouter, useSearchParams } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useSearchParams } from "next/navigation";
+import { useState } from "react";
 import { useAuth } from "@/hooks/use-auth";
 
 export function LoginForm() {
-  const router = useRouter();
   const searchParams = useSearchParams();
-  const { configured, isAuthenticated, role, signIn } = useAuth();
+  const { configured, signIn } = useAuth();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
-
-  useEffect(() => {
-    if (!isAuthenticated) {
-      return;
-    }
-
-    const redirectTo = searchParams.get("redirectTo");
-
-    if (redirectTo) {
-      router.replace(redirectTo);
-      return;
-    }
-
-    router.replace(role === "admin" ? "/admin/clients" : "/dashboard");
-  }, [isAuthenticated, role, router, searchParams]);
 
   async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -36,11 +20,15 @@ export function LoginForm() {
 
     const { error } = await signIn({ email, password });
 
-    setIsSubmitting(false);
-
     if (error) {
+      setIsSubmitting(false);
       setErrorMessage(error);
+      return;
     }
+
+    // 로그인 성공: 전체 페이지 리로드로 미들웨어가 새 쿠키를 인식하도록 함
+    const redirectTo = searchParams.get("redirectTo") ?? "/admin/clients";
+    window.location.href = redirectTo;
   }
 
   return (

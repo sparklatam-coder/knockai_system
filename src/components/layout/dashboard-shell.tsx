@@ -1,5 +1,5 @@
-import Link from "next/link";
 import type { ReactNode } from "react";
+import { GlobalNav } from "@/components/layout/GlobalNav";
 import { SessionActions } from "@/components/layout/session-actions";
 
 interface DashboardShellProps {
@@ -19,19 +19,14 @@ export function DashboardShell({
 }: DashboardShellProps) {
   return (
     <div className="dashboard-shell">
+      <GlobalNav />
+
       <header className="dashboard-topbar">
         <div>
           <div className="hero-badge">KNOCK 병원 마케팅 시스템</div>
           <h1>{title}</h1>
           <p>{description}</p>
         </div>
-
-        <nav className="shell-nav">
-          <Link href="/">홈</Link>
-          <Link href="/login">로그인</Link>
-          <Link href="/admin/clients">관리자</Link>
-          <Link href="/dashboard">고객 대시보드</Link>
-        </nav>
       </header>
 
       {showSessionActions ? <SessionActions /> : null}

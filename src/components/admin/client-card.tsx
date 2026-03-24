@@ -4,9 +4,9 @@ import { PackageBadge } from "@/components/PackageBadge";
 import type { ClientListItem, NodeStatus } from "@/lib/types";
 
 const STATUS_COLOR: Record<NodeStatus, string> = {
-  active:      "#34C759",
-  in_progress: "#F9A825",
-  inactive:    "#9E9E9E",
+  active:      "var(--status-active)",
+  in_progress: "var(--status-progress)",
+  inactive:    "var(--status-inactive)",
 };
 
 export function ClientCard({ client }: { client: ClientListItem }) {
@@ -15,14 +15,14 @@ export function ClientCard({ client }: { client: ClientListItem }) {
 
   return (
     <Link
-      href={`/admin/clients/${encodeURIComponent(client.name)}`}
+      href={`/admin/clients/${client.id}`}
       style={{ textDecoration: "none", color: "inherit", display: "block" }}
     >
       <article style={{
-        background: "rgba(21,25,32,0.92)",
+        background: "var(--card-alpha)",
         border: "1px solid var(--border)",
-        borderRadius: 16,
-        padding: 20,
+        borderRadius: "var(--radius-card)",
+        padding: "var(--space-card)",
         display: "flex",
         flexDirection: "column",
         gap: 16,
@@ -30,7 +30,7 @@ export function ClientCard({ client }: { client: ClientListItem }) {
         cursor: "pointer",
       }}
       onMouseEnter={(e) => {
-        (e.currentTarget as HTMLElement).style.borderColor = "rgba(79,156,255,0.35)";
+        (e.currentTarget as HTMLElement).style.borderColor = "var(--accent-hover)";
         (e.currentTarget as HTMLElement).style.transform = "translateY(-2px)";
       }}
       onMouseLeave={(e) => {
@@ -78,10 +78,10 @@ export function ClientCard({ client }: { client: ClientListItem }) {
         <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
           <div style={{ display: "flex", gap: 10, flex: 1 }}>
             {activeCount > 0 && (
-              <span style={{ fontSize: 12, color: "#34C759", fontWeight: 700 }}>✓ {activeCount} 완료</span>
+              <span style={{ fontSize: 12, color: "var(--status-active)", fontWeight: 700 }}>✓ {activeCount} 완료</span>
             )}
             {inProgressCount > 0 && (
-              <span style={{ fontSize: 12, color: "#F9A825", fontWeight: 700 }}>◑ {inProgressCount} 진행</span>
+              <span style={{ fontSize: 12, color: "var(--status-progress)", fontWeight: 700 }}>◑ {inProgressCount} 진행</span>
             )}
           </div>
           <span style={{ fontSize: 11, color: "var(--tdim)" }}>
@@ -92,7 +92,7 @@ export function ClientCard({ client }: { client: ClientListItem }) {
         </div>
 
         {/* Footer */}
-        <div style={{ borderTop: "1px solid rgba(255,255,255,0.05)", paddingTop: 12, display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+        <div style={{ borderTop: "1px solid var(--overlay-3)", paddingTop: 12, display: "flex", alignItems: "center", justifyContent: "space-between" }}>
           <span style={{ fontSize: 12, color: "var(--tsub)" }}>
             {client.contact_name ? `담당: ${client.contact_name}` : "담당자 미입력"}
           </span>
