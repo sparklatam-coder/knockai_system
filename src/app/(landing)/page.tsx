@@ -199,28 +199,11 @@ export default function LandingPage() {
                 </div>
               </AnimatedSection>
 
-              {/* Hero stats bar */}
-              <AnimatedSection delay={0.4}>
-                <div className="hero-stats mt-14">
-                  {[
-                    { value: "500+", label: "관리 병원" },
-                    { value: "15년", label: "마케팅 경력" },
-                    { value: "98%", label: "재계약률" },
-                  ].map((s, i) => (
-                    <div key={i} className="hero-stat-item">
-                      <div className="hero-stat-value">{s.value}</div>
-                      <div className="hero-stat-label">{s.label}</div>
-                    </div>
-                  ))}
-                </div>
-              </AnimatedSection>
             </div>
           </div>
         </section>
       </div>
 
-      {/* ═══ Logo Marquee ═══ */}
-      <LogoMarquee />
 
       {/* ═══ Pain Point ═══ */}
       <section className="section-padding">
