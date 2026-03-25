@@ -137,7 +137,7 @@ function LogCountBadge({ count }: { count: number }) {
         fontWeight: 700,
         fontFamily: "'Outfit', sans-serif",
         background: "var(--gP)",
-        color: "#081018",
+        color: "#ffffff",
         marginLeft: "auto",
         flexShrink: 0,
       }}
@@ -156,7 +156,7 @@ function LockOverlay() {
         display: "flex",
         alignItems: "center",
         justifyContent: "center",
-        background: "rgba(0,0,0,0.55)",
+        background: "rgba(255,255,255,0.7)",
         borderRadius: "inherit",
         zIndex: 5,
         fontSize: 18,
@@ -259,7 +259,7 @@ export function SharedKnockSystem({
     return (
       <button
         className={classNames}
-        style={{ ["--nc" as string]: color }}
+        style={{ ["--nc" as string]: color, ["--glow-delay" as string]: `${glowIndex++ * 0.5}s` }}
         onClick={() => onNodeClick?.(node.key)}
         type="button"
       >
@@ -290,6 +290,8 @@ export function SharedKnockSystem({
   const R = 248;
   const SW = 55;
   const SH = 34;
+
+  let glowIndex = 0;
 
   return (
     <div className="main-row main-row--sync">
@@ -340,7 +342,7 @@ export function SharedKnockSystem({
                         ) : (
                           <button
                             className="pipe-node"
-                            style={{ ["--nc" as string]: color }}
+                            style={{ ["--nc" as string]: color, ["--glow-delay" as string]: `${glowIndex++ * 0.5}s` }}
                             onClick={() => onNodeClick?.(row.left.key)}
                             type="button"
                           >
@@ -383,7 +385,7 @@ export function SharedKnockSystem({
                         ) : (
                           <button
                             className="pipe-node"
-                            style={{ ["--nc" as string]: color }}
+                            style={{ ["--nc" as string]: color, ["--glow-delay" as string]: `${glowIndex++ * 0.5}s` }}
                             onClick={() => onNodeClick?.(row.right.key)}
                             type="button"
                           >
@@ -520,7 +522,7 @@ export function SharedKnockSystem({
                             height: 16,
                             borderRadius: "50%",
                             background: "var(--gP)",
-                            color: "#081018",
+                            color: "#ffffff",
                             fontSize: 9,
                             fontWeight: 900,
                             display: "flex",
@@ -554,7 +556,7 @@ export function SharedKnockSystem({
                   key={segment.id}
                   className="w-seg"
                   onClick={() => onSegmentClick?.(segment.id)}
-                  style={{ ["--sc" as string]: segment.color, left: `${x}px`, top: `${y}px` }}
+                  style={{ ["--sc" as string]: segment.color, ["--glow-delay" as string]: `${index * 0.4}s`, left: `${x}px`, top: `${y}px` }}
                   type="button"
                 >
                   <div className="w-dot" style={{ borderColor: segment.color }}>

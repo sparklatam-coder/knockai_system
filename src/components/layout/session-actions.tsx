@@ -18,19 +18,58 @@ export function SessionActions() {
   }
 
   const isAdminPage = pathname.startsWith("/admin");
+  const isClientListPage = pathname === "/admin/clients";
+  // Extract client ID from /admin/clients/[id] paths
+  const clientIdMatch = pathname.match(/^\/admin\/clients\/([^/]+)/);
+  const clientId = clientIdMatch?.[1] ?? null;
+
+  const isDashboardPage = pathname === "/dashboard" || pathname.endsWith("/preview");
 
   return (
     <div className="session-actions" style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12 }}>
-      <div className="session-pill">
+      {(role === "admin" || role === "super_admin") && isDashboardPage && (
+        <button
+          type="button"
+          onClick={() => router.push("/admin/clients")}
+          style={{
+            padding: "6px 14px",
+            borderRadius: 8,
+            border: "1px solid var(--overlay-5)",
+            background: "var(--overlay-3)",
+            color: "var(--tsub)",
+            fontSize: 12,
+            fontWeight: 600,
+            cursor: "pointer",
+            transition: "all 0.15s",
+            whiteSpace: "nowrap",
+            flexShrink: 0,
+            display: "inline-flex",
+            alignItems: "center",
+            gap: 5,
+          }}
+        >
+          ☰ 고객 리스트
+        </button>
+      )}
+
+      <div className="session-pill" style={{ marginLeft: isDashboardPage && (role === "admin" || role === "super_admin") ? 0 : undefined }}>
         <span>{role === "super_admin" ? "슈퍼관리자" : role === "admin" ? "관리자" : "고객"}</span>
         <strong>{user?.email}</strong>
       </div>
 
       <div style={{ display: "flex", alignItems: "center", gap: 8, marginLeft: "auto" }}>
-        {(role === "admin" || role === "super_admin") && (
+        {(role === "admin" || role === "super_admin") && !isClientListPage && (
           <button
             type="button"
-            onClick={() => router.push(isAdminPage ? "/dashboard" : "/admin/clients")}
+            onClick={() => {
+              if (isAdminPage && clientId) {
+                router.push(`/admin/clients/${clientId}/preview`);
+              } else if (isAdminPage) {
+                router.push("/dashboard");
+              } else {
+                router.push("/admin/clients");
+              }
+            }}
             style={{
               padding: "6px 14px",
               borderRadius: 8,

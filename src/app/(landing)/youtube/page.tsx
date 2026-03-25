@@ -9,6 +9,7 @@ import {
   Target, Clapperboard, Video, Scissors, Megaphone, Search,
   Shield, Phone, Zap, Stethoscope, HeartPulse, ExternalLink, ChevronDown
 } from "lucide-react";
+import { DoorKnockHero } from "@/components/landing/DoorKnockHero";
 import { useCounter } from "@/hooks/useScrollAnimation";
 import { useState } from "react";
 
@@ -35,29 +36,26 @@ export default function YouTubePage() {
       <GlobalNav />
 
       {/* Hero */}
-      <section className="relative pt-32 pb-20 min-h-screen flex items-center justify-center">
-        <div className="absolute inset-0 pointer-events-none">
-          <div className="absolute top-1/4 left-1/2 -translate-x-1/2 w-[700px] h-[400px] bg-primary/5 rounded-full blur-[150px]" />
-        </div>
+      <section className="relative pt-32 pb-20 min-h-screen flex items-center">
+        <DoorKnockHero />
         <div className="container mx-auto px-6 relative">
-          <div className="content-max text-center space-y-8">
+          <div className="content-max text-center">
             <AnimatedSection>
-              <div className="knock-badge mx-auto w-fit">
-                <Play className="w-4 h-4 fill-current" />
+              <div className="knock-badge-premium mb-8 mx-auto w-fit">
                 병원·의원·치과 유튜브 전문
               </div>
             </AnimatedSection>
 
             <AnimatedSection delay={0.1}>
-              <h1 className="text-4xl md:text-6xl lg:text-7xl font-black leading-tight">
+              <h1 className="text-4xl md:text-6xl lg:text-7xl font-black leading-tight mb-6 premium-title">
                 환자가 병원을 고를 때
                 <br />
-                <span className="text-primary">유튜브를 먼저 봅니다</span>
+                <span className="gradient-text text-5xl md:text-7xl lg:text-[5.4rem]">유튜브를 먼저 봅니다</span>
               </h1>
             </AnimatedSection>
 
             <AnimatedSection delay={0.2}>
-              <p className="text-lg md:text-xl text-muted-foreground max-w-2xl mx-auto leading-relaxed">
+              <p className="text-lg md:text-xl text-muted-foreground max-w-2xl mx-auto mb-10 leading-relaxed">
                 산부인과 분야 1위 채널(41만 구독자)을 만든 팀이
                 <br />
                 선생님의 병원도 유튜브 1위로 만들어 드립니다.

@@ -1,40 +1,40 @@
 /* ══════════════════════════════════════════════════════════════
    KNOCK Design System — Single Source of Truth
-   모든 페이지에서 이 파일을 import하면 브랜드 통일
+   병원 원장님 타겟 — 신뢰감 + 프리미엄 라이트 테마
    ══════════════════════════════════════════════════════════════ */
 
 :root {
   /* ── Brand Colors ── */
-  --knock-primary: #e94560;
-  --knock-primary-hover: #f05a73;
-  --knock-primary-dim: rgba(233, 69, 96, 0.15);
-  --knock-primary-glow: rgba(233, 69, 96, 0.3);
+  --knock-primary: #1e40af;
+  --knock-primary-hover: #1d4ed8;
+  --knock-primary-dim: rgba(30, 64, 175, 0.08);
+  --knock-primary-glow: rgba(30, 64, 175, 0.15);
 
-  --knock-blue: #4a9eff;
-  --knock-blue-dim: rgba(74, 158, 255, 0.15);
+  --knock-blue: #3b82f6;
+  --knock-blue-dim: rgba(59, 130, 246, 0.08);
 
-  --knock-success: #34c759;
-  --knock-success-dim: rgba(52, 199, 89, 0.12);
-  --knock-warning: #ff8a50;
-  --knock-warning-dim: rgba(255, 138, 80, 0.12);
+  --knock-success: #059669;
+  --knock-success-dim: rgba(5, 150, 105, 0.08);
+  --knock-warning: #d97706;
+  --knock-warning-dim: rgba(217, 119, 6, 0.08);
 
   /* ── Surface Colors ── */
-  --knock-bg: #060611;
-  --knock-bg-card: #0d0d1a;
-  --knock-bg-elevated: #151920;
-  --knock-bg-overlay: rgba(6, 6, 17, 0.85);
-  --knock-bg-overlay-dense: rgba(6, 6, 17, 0.95);
-  --knock-bg-glass: rgba(255, 255, 255, 0.04);
+  --knock-bg: #f0f6ff;
+  --knock-bg-card: #ffffff;
+  --knock-bg-elevated: #f8fafc;
+  --knock-bg-overlay: rgba(255, 255, 255, 0.92);
+  --knock-bg-overlay-dense: rgba(255, 255, 255, 0.97);
+  --knock-bg-glass: rgba(255, 255, 255, 0.7);
 
   /* ── Text Colors ── */
-  --knock-text: #e8e8ed;
-  --knock-text-bright: #ffffff;
-  --knock-text-muted: #72728a;
-  --knock-text-dim: #6e7a8d;
+  --knock-text: #1e293b;
+  --knock-text-bright: #0f172a;
+  --knock-text-muted: #64748b;
+  --knock-text-dim: #94a3b8;
 
   /* ── Border Colors ── */
-  --knock-border: #1e1e32;
-  --knock-border-accent: rgba(233, 69, 96, 0.44);
+  --knock-border: #e2e8f0;
+  --knock-border-accent: rgba(30, 64, 175, 0.2);
 
   /* ── Typography ── */
   --knock-font-body: 'Pretendard Variable', 'Pretendard', system-ui, -apple-system, sans-serif;
@@ -48,8 +48,9 @@
   --knock-radius-pill: 9999px;
 
   /* ── Shadows ── */
-  --knock-glow-primary: 0 0 20px var(--knock-primary-glow);
-  --knock-shadow-card-hover: 0 4px 20px rgba(233, 69, 96, 0.15);
+  --knock-glow-primary: 0 2px 12px rgba(30, 64, 175, 0.15);
+  --knock-shadow-card: 0 1px 3px rgba(0, 0, 0, 0.04), 0 1px 2px rgba(0, 0, 0, 0.06);
+  --knock-shadow-card-hover: 0 10px 40px rgba(30, 64, 175, 0.1), 0 4px 12px rgba(0, 0, 0, 0.05);
 }
 
 /* ══ Button System ══ */
@@ -72,20 +73,20 @@
 
 .knock-btn-primary {
   background: var(--knock-primary);
-  color: var(--knock-text-bright);
+  color: #ffffff;
   box-shadow: var(--knock-glow-primary);
 }
 
 .knock-btn-primary:hover {
   background: var(--knock-primary-hover);
-  box-shadow: 0 4px 24px var(--knock-primary-glow);
+  box-shadow: 0 4px 20px rgba(30, 64, 175, 0.2);
   transform: translateY(-1px);
 }
 
 .knock-btn-outline {
   background: transparent;
   color: var(--knock-primary);
-  border: 1px solid var(--knock-primary);
+  border: 1.5px solid var(--knock-primary);
 }
 
 .knock-btn-outline:hover {
@@ -134,7 +135,7 @@
 
 .knock-teaser {
   display: inline-block;
-  background: var(--knock-bg-glass);
+  background: var(--knock-bg-elevated);
   border: 1px solid var(--knock-border);
   border-radius: var(--knock-radius-md);
   padding: 12px 20px;
@@ -158,12 +159,14 @@
   border-radius: var(--knock-radius-lg);
   padding: 24px;
   text-decoration: none;
-  transition: border-color 0.2s, box-shadow 0.2s;
+  box-shadow: var(--knock-shadow-card);
+  transition: border-color 0.2s, box-shadow 0.3s, transform 0.2s;
 }
 
 .knock-crosslink:hover {
   border-color: var(--knock-primary);
   box-shadow: var(--knock-shadow-card-hover);
+  transform: translateY(-2px);
 }
 
 .knock-crosslink-emoji { font-size: 24px; margin-bottom: 12px; }
@@ -189,6 +192,7 @@
   background: var(--knock-bg-card);
   border: 1px solid var(--knock-border);
   border-radius: var(--knock-radius-md);
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.08);
 }
 
 /* ══ Utility Classes ══ */

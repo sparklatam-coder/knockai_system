@@ -57,36 +57,39 @@ export function GuidePanel({ subNodeId, guideContent, guideLinks, role, onSave }
   const removeLink = (index: number) => setDraftLinks((prev) => prev.filter((_, i) => i !== index));
 
   return (
-    <span className="guide-wrapper">
-      {/* ⓘ icon button */}
+    <>
+      {/* ⓘ icon button — inline, sits at far right of checkbox row */}
       <button
         type="button"
         onClick={(e) => { e.stopPropagation(); setOpen(!open); }}
         className="guide-icon-btn"
         title="실행 가이드"
         style={{
-          width: 18, height: 18, borderRadius: "50%",
-          border: hasGuide ? "1px solid #4a9eff" : "1px solid var(--border)",
-          background: hasGuide ? "rgba(74,158,255,0.1)" : "transparent",
-          color: hasGuide ? "#4a9eff" : "var(--tdim)",
-          fontSize: 10, fontWeight: 700, cursor: "pointer",
+          width: 24, height: 24, borderRadius: "50%",
+          border: hasGuide ? "1.5px solid hsl(224 76% 48%)" : "1.5px solid hsl(214 32% 85%)",
+          background: hasGuide ? "hsla(224, 76%, 48%, 0.08)" : "transparent",
+          color: hasGuide ? "hsl(224 76% 48%)" : "hsl(215 16% 62%)",
+          fontSize: 12, fontWeight: 700, cursor: "pointer",
           display: "inline-flex", alignItems: "center", justifyContent: "center",
-          flexShrink: 0,
+          flexShrink: 0, transition: "all 0.2s",
         }}
       >
         ⓘ
       </button>
 
-      {/* Guide content panel */}
+      {/* Guide content panel — expands below the checkbox row */}
       {open && (
         <div
           onClick={(e) => e.stopPropagation()}
           style={{
-            marginTop: 8, padding: 12,
-            background: "#060611",
-            border: "1px solid #1e1e32",
-            borderLeft: "3px solid #4a9eff",
-            borderRadius: 8,
+            position: "absolute", left: 0, right: 0, top: "100%",
+            marginTop: 6, padding: 14,
+            background: "#ffffff",
+            border: "1px solid hsl(214 32% 91%)",
+            borderLeft: "3px solid hsl(224 76% 48%)",
+            borderRadius: 10,
+            boxShadow: "0 4px 16px rgba(0,0,0,0.08)",
+            zIndex: 10,
           }}
         >
           {editing && isSuperAdmin ? (
@@ -97,16 +100,16 @@ export function GuidePanel({ subNodeId, guideContent, guideLinks, role, onSave }
                 onChange={(e) => setDraft(e.target.value)}
                 placeholder={"실행 가이드를 작성하세요...\n\n1. 첫 번째 단계\n2. 두 번째 단계"}
                 style={{
-                  width: "100%", minHeight: 100, background: "#0a0a1a",
-                  border: "1px solid #1e1e32", borderRadius: 8, padding: 10,
-                  color: "#eaeaef", fontSize: 13, lineHeight: 1.7,
+                  width: "100%", minHeight: 100, background: "hsl(210 40% 98%)",
+                  border: "1px solid hsl(214 32% 91%)", borderRadius: 8, padding: 10,
+                  color: "hsl(222 47% 11%)", fontSize: 13, lineHeight: 1.7,
                   resize: "vertical", fontFamily: "inherit", outline: "none",
                 }}
               />
 
               {/* Links editor */}
               <div>
-                <span style={{ fontSize: 11, color: "#72728a" }}>🔗 링크</span>
+                <span style={{ fontSize: 11, color: "hsl(215 16% 52%)" }}>🔗 링크</span>
                 {draftLinks.map((link, i) => (
                   <div key={i} style={{ display: "flex", gap: 6, marginTop: 6 }}>
                     <input
@@ -115,8 +118,8 @@ export function GuidePanel({ subNodeId, guideContent, guideLinks, role, onSave }
                       onChange={(e) => updateLink(i, "label", e.target.value)}
                       style={{
                         flex: 1, padding: "5px 8px", fontSize: 12,
-                        background: "#0a0a1a", border: "1px solid #1e1e32",
-                        borderRadius: 6, color: "#eaeaef", outline: "none",
+                        background: "hsl(210 40% 98%)", border: "1px solid hsl(214 32% 91%)",
+                        borderRadius: 6, color: "hsl(222 47% 11%)", outline: "none",
                       }}
                     />
                     <input
@@ -125,8 +128,8 @@ export function GuidePanel({ subNodeId, guideContent, guideLinks, role, onSave }
                       onChange={(e) => updateLink(i, "url", e.target.value)}
                       style={{
                         flex: 2, padding: "5px 8px", fontSize: 12,
-                        background: "#0a0a1a", border: "1px solid #1e1e32",
-                        borderRadius: 6, color: "#eaeaef", outline: "none",
+                        background: "hsl(210 40% 98%)", border: "1px solid hsl(214 32% 91%)",
+                        borderRadius: 6, color: "hsl(222 47% 11%)", outline: "none",
                       }}
                     />
                     <button type="button" onClick={() => removeLink(i)}
@@ -138,8 +141,8 @@ export function GuidePanel({ subNodeId, guideContent, guideLinks, role, onSave }
                 <button type="button" onClick={addLink}
                   style={{
                     marginTop: 6, padding: "3px 10px", fontSize: 11,
-                    color: "#4a9eff", background: "transparent",
-                    border: "1px dashed rgba(74,158,255,0.3)",
+                    color: "hsl(224 76% 48%)", background: "transparent",
+                    border: "1px dashed hsla(224, 76%, 48%, 0.3)",
                     borderRadius: 6, cursor: "pointer",
                   }}>
                   + 링크 추가
@@ -150,8 +153,8 @@ export function GuidePanel({ subNodeId, guideContent, guideLinks, role, onSave }
               <div style={{ display: "flex", gap: 8, justifyContent: "flex-end" }}>
                 <button type="button" onClick={cancelEdit}
                   style={{
-                    padding: "5px 12px", fontSize: 12, color: "#72728a",
-                    background: "transparent", border: "1px solid #1e1e32",
+                    padding: "5px 12px", fontSize: 12, color: "hsl(215 16% 52%)",
+                    background: "transparent", border: "1px solid hsl(214 32% 91%)",
                     borderRadius: 8, cursor: "pointer",
                   }}>
                   취소
@@ -159,7 +162,7 @@ export function GuidePanel({ subNodeId, guideContent, guideLinks, role, onSave }
                 <button type="button" onClick={() => void handleSave()} disabled={saving}
                   style={{
                     padding: "5px 14px", fontSize: 12, fontWeight: 700,
-                    color: "#fff", background: "#4a9eff", border: "none",
+                    color: "#fff", background: "hsl(224 76% 48%)", border: "none",
                     borderRadius: 8, cursor: "pointer",
                     opacity: saving ? 0.5 : 1,
                   }}>
@@ -173,7 +176,7 @@ export function GuidePanel({ subNodeId, guideContent, guideLinks, role, onSave }
               {hasGuide ? (
                 <>
                   {guideContent && (
-                    <p style={{ fontSize: 13, color: "#c8c8d4", lineHeight: 1.7, whiteSpace: "pre-wrap", margin: 0 }}>
+                    <p style={{ fontSize: 13, color: "hsl(222 47% 25%)", lineHeight: 1.7, whiteSpace: "pre-wrap", margin: 0 }}>
                       {guideContent}
                     </p>
                   )}
@@ -181,7 +184,7 @@ export function GuidePanel({ subNodeId, guideContent, guideLinks, role, onSave }
                     <div style={{ marginTop: 8, display: "flex", flexDirection: "column", gap: 4 }}>
                       {guideLinks.map((link, i) => (
                         <a key={i} href={link.url} target="_blank" rel="noopener noreferrer"
-                          style={{ fontSize: 12, color: "#4a9eff", textDecoration: "none" }}>
+                          style={{ fontSize: 12, color: "hsl(224 76% 48%)", textDecoration: "none" }}>
                           🔗 {link.label} →
                         </a>
                       ))}
@@ -189,14 +192,15 @@ export function GuidePanel({ subNodeId, guideContent, guideLinks, role, onSave }
                   )}
                 </>
               ) : (
-                <p style={{ fontSize: 12, color: "#72728a", margin: 0 }}>아직 가이드가 없습니다</p>
+                <p style={{ fontSize: 12, color: "hsl(215 16% 62%)", margin: 0 }}>아직 가이드가 없습니다</p>
               )}
               {isSuperAdmin && (
                 <button type="button" onClick={startEdit}
                   style={{
-                    marginTop: 8, padding: "3px 10px", fontSize: 11,
-                    color: "#72728a", background: "transparent",
-                    border: "1px solid #1e1e32", borderRadius: 6, cursor: "pointer",
+                    marginTop: 8, padding: "4px 12px", fontSize: 11,
+                    color: "hsl(224 76% 48%)", background: "hsla(224, 76%, 48%, 0.06)",
+                    border: "1px solid hsla(224, 76%, 48%, 0.15)",
+                    borderRadius: 6, cursor: "pointer",
                   }}>
                   {hasGuide ? "수정" : "가이드 작성"}
                 </button>
@@ -205,6 +209,6 @@ export function GuidePanel({ subNodeId, guideContent, guideLinks, role, onSave }
           )}
         </div>
       )}
-    </span>
+    </>
   );
 }

@@ -9,6 +9,7 @@ import { Menu, X, ChevronDown } from "lucide-react";
 const serviceItems = [
   { emoji: "\uD83D\uDCCD", label: "네이버 플레이스", desc: "상위노출 전문", href: "/place" },
   { emoji: "\uD83C\uDFAC", label: "유튜브", desc: "채널 성장 전문", href: "/youtube" },
+  { emoji: "\uD83C\uDFE0", label: "홈페이지 제작", desc: "자동화시스템", href: "/homepage" },
 ];
 
 /* ── nav link items ── */
@@ -30,7 +31,7 @@ function KnockLogo() {
           display: "inline-flex",
           alignItems: "center",
           letterSpacing: "0.04em",
-          color: "#eaeaef",
+          color: "#0f172a",
         }}
       >
         KN
@@ -89,7 +90,7 @@ export function GlobalNav() {
     serviceTimeout.current = setTimeout(() => setServiceOpen(false), 150);
   };
 
-  const isServiceActive = pathname === "/place" || pathname === "/youtube";
+  const isServiceActive = pathname === "/place" || pathname === "/youtube" || pathname === "/homepage";
 
   const linkStyle = (active: boolean): React.CSSProperties => ({
     fontFamily: "var(--knock-font-body)",
@@ -138,7 +139,7 @@ export function GlobalNav() {
             href="/"
             style={linkStyle(pathname === "/")}
             onMouseEnter={(e) => {
-              if (pathname !== "/") e.currentTarget.style.color = "#eaeaef";
+              if (pathname !== "/") e.currentTarget.style.color = "var(--knock-text-bright)";
             }}
             onMouseLeave={(e) => {
               if (pathname !== "/") e.currentTarget.style.color = "var(--knock-text-muted)";
@@ -167,7 +168,7 @@ export function GlobalNav() {
                 padding: 0,
               }}
               onMouseEnter={(e) => {
-                if (!isServiceActive) e.currentTarget.style.color = "#eaeaef";
+                if (!isServiceActive) e.currentTarget.style.color = "var(--knock-text-bright)";
               }}
               onMouseLeave={(e) => {
                 if (!isServiceActive) e.currentTarget.style.color = "var(--knock-text-muted)";
@@ -192,10 +193,11 @@ export function GlobalNav() {
                   left: "50%",
                   transform: "translateX(-50%)",
                   width: 240,
-                  background: "var(--knock-bg-card)",
+                  background: "#ffffff",
                   border: "1px solid var(--knock-border)",
                   borderRadius: "var(--knock-radius-md)",
                   padding: "12px 16px",
+                  boxShadow: "0 10px 40px rgba(0, 0, 0, 0.08)",
                 }}
               >
                 {serviceItems.map((item) => (
@@ -212,7 +214,7 @@ export function GlobalNav() {
                       transition: "background 0.15s",
                     }}
                     onMouseEnter={(e) => {
-                      e.currentTarget.style.background = "#141428";
+                      e.currentTarget.style.background = "#f1f5f9";
                     }}
                     onMouseLeave={(e) => {
                       e.currentTarget.style.background = "transparent";
@@ -244,14 +246,14 @@ export function GlobalNav() {
             )}
           </div>
 
-          {/* 레퍼런스, 플라이휠 시스템 */}
+          {/* 레퍼런스, 노크 시스템 */}
           {navLinks.slice(1).map((link) => (
             <Link
               key={link.href}
               href={link.href}
               style={linkStyle(pathname === link.href)}
               onMouseEnter={(e) => {
-                if (pathname !== link.href) e.currentTarget.style.color = "#eaeaef";
+                if (pathname !== link.href) e.currentTarget.style.color = "var(--knock-text-bright)";
               }}
               onMouseLeave={(e) => {
                 if (pathname !== link.href) e.currentTarget.style.color = "var(--knock-text-muted)";
@@ -277,7 +279,7 @@ export function GlobalNav() {
               transition: "color 0.2s",
             }}
             onMouseEnter={(e) => {
-              e.currentTarget.style.color = "#eaeaef";
+              e.currentTarget.style.color = "var(--knock-text-bright)";
             }}
             onMouseLeave={(e) => {
               e.currentTarget.style.color = "var(--knock-text-muted)";
@@ -297,13 +299,14 @@ export function GlobalNav() {
               fontWeight: 700,
               fontSize: 14,
               textDecoration: "none",
-              transition: "opacity 0.2s",
+              transition: "all 0.2s",
+              boxShadow: "0 2px 8px rgba(30, 64, 175, 0.2)",
             }}
             onMouseEnter={(e) => {
-              e.currentTarget.style.opacity = "0.9";
+              e.currentTarget.style.background = "var(--knock-primary-hover)";
             }}
             onMouseLeave={(e) => {
-              e.currentTarget.style.opacity = "1";
+              e.currentTarget.style.background = "var(--knock-primary)";
             }}
           >
             무료 상담
@@ -319,7 +322,7 @@ export function GlobalNav() {
             background: "none",
             border: "none",
             cursor: "pointer",
-            color: "#eaeaef",
+            color: "#0f172a",
             padding: 4,
           }}
           aria-label="메뉴 열기"
@@ -338,7 +341,7 @@ export function GlobalNav() {
             left: 0,
             right: 0,
             bottom: 0,
-            background: "var(--knock-bg)",
+            background: "#ffffff",
             zIndex: 49,
             overflowY: "auto",
             padding: "24px 24px 40px",

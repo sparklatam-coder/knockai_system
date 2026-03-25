@@ -1,7 +1,10 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import { GlobalNav } from "@/components/layout/GlobalNav";
+import { Footer } from "@/components/landing/Footer";
+import { AnimatedSection } from "@/components/landing/AnimatedSection";
+import { DoorKnockHero } from "@/components/landing/DoorKnockHero";
 import {
   SharedKnockSystem,
   DEFAULT_PIPELINE_ROWS,
@@ -249,57 +252,55 @@ export default function Home() {
     };
   }, []);
 
-  const stars = useMemo(
-    () =>
-      Array.from({ length: 50 }, (_, index) => ({
-        left: `${(index * 37.7) % 100}%`,
-        top: `${(index * 19.3) % 100}%`,
-        duration: `${2 + ((index * 11) % 40) / 10}s`,
-        delay: `${((index * 7) % 30) / 10}s`,
-      })),
-    [],
-  );
-
   const selectedPopup = activePopup ? popups[activePopup] : null;
 
   return (
-    <>
+    <div className="min-h-screen bg-background overflow-hidden">
       <GlobalNav />
 
-      <div className="stars" aria-hidden="true">
-        {stars.map((star, index) => (
-          <span
-            key={`star-${index}`}
-            style={{
-              left: star.left,
-              top: star.top,
-              animationDuration: star.duration,
-              animationDelay: star.delay,
-            }}
-          />
-        ))}
-      </div>
+      {/* Hero */}
+      <section className="relative pt-32 pb-20 min-h-screen flex items-center">
+        <DoorKnockHero />
+        <div className="container mx-auto px-6 relative">
+          <div className="content-max text-center">
+            <AnimatedSection>
+              <div className="knock-badge-premium mb-8 mx-auto w-fit">
+                노크가 일하는 방식
+              </div>
+            </AnimatedSection>
 
-      <div className="hero">
-        <div className="hero-badge">노크가 일하는 방식</div>
-        <h1>
-          새 환자가 오고,{"\n"}
-          <span className="ac">온 환자가 다시 오는 구조</span>
-        </h1>
-        <p>
-          노크는 두 가지를 동시에 만듭니다.<br />
-          왼쪽은 새 환자를 만드는 길,<br />
-          오른쪽은 한번 온 환자를 평생 환자로 만드는 길.<br />
-          이 두 바퀴가 맞물려 돌아갈 때, <strong>병원이 성장합니다.</strong>
-        </p>
-        <a
-          href="/login"
-          className="primary-button"
-          style={{ marginTop: 24, gap: 8, padding: "12px 28px", textDecoration: "none", fontSize: 15 }}
-        >
-          🔐 내 병원 현황 보기
-        </a>
-      </div>
+            <AnimatedSection delay={0.1}>
+              <h1 className="text-4xl md:text-6xl lg:text-7xl font-black leading-tight mb-6 premium-title">
+                새 환자가 오고,
+                <br />
+                <span className="gradient-text text-5xl md:text-7xl lg:text-[5.4rem]">온 환자가 다시 오는 구조</span>
+              </h1>
+            </AnimatedSection>
+
+            <AnimatedSection delay={0.2}>
+              <p className="text-lg md:text-xl text-muted-foreground max-w-2xl mx-auto mb-10 leading-relaxed">
+                노크는 두 가지를 동시에 만듭니다.
+                <br />
+                왼쪽은 새 환자를 만드는 길,
+                <br />
+                오른쪽은 한번 온 환자를 평생 환자로 만드는 길.
+                <br />
+                이 두 바퀴가 맞물려 돌아갈 때, <strong className="gradient-text">병원이 성장합니다.</strong>
+              </p>
+            </AnimatedSection>
+
+            <AnimatedSection delay={0.3}>
+              <a
+                href="/login"
+                className="inline-flex items-center gap-2 bg-primary text-primary-foreground hover:bg-primary/90 font-bold text-lg px-8 py-6 rounded-xl glow-button"
+                style={{ textDecoration: "none" }}
+              >
+                내 병원 현황 보기 →
+              </a>
+            </AnimatedSection>
+          </div>
+        </div>
+      </section>
 
       <div className="container">
         <SharedKnockSystem
@@ -321,9 +322,9 @@ export default function Home() {
           onSegmentClick={(id) => setActivePopup(id as PopupKey)}
         />
 
-        <div className="bottom-cta">
-          <h3>이 두 바퀴가 맞물리면, 경쟁 병원과 격차가 벌어집니다</h3>
-          <p>
+        <div className="bottom-cta" style={{ marginTop: 40 }}>
+          <h3 className="text-2xl md:text-4xl font-black mb-4">이 두 바퀴가 맞물리면, 경쟁 병원과 격차가 벌어집니다</h3>
+          <p className="text-muted-foreground text-base md:text-lg leading-relaxed">
             왼쪽에서 <strong>새 환자</strong>를 만들고, 오른쪽에서 <strong>평생
             환자</strong>로 만듭니다.
             <br />
@@ -343,7 +344,7 @@ export default function Home() {
         </div>
       </div>
 
-      <div className="footer">노크 병원 마케팅 시스템 · 새 환자 만들기 + 다시오게360</div>
+      {/* removed old footer - using shared Footer below */}
 
       <div
         aria-hidden={activePopup === null}
@@ -378,39 +379,39 @@ export default function Home() {
       </div>
 
       {/* Bottom CTA */}
-      <div style={{
-        textAlign: "center",
-        padding: "60px 24px 80px",
-        maxWidth: 600,
-        margin: "0 auto",
-      }}>
-        <p style={{ color: "var(--knock-text)", fontSize: 22, fontWeight: 800, marginBottom: 8 }}>
-          이 시스템을 우리 병원에 적용하고 싶다면
-        </p>
-        <p style={{ color: "var(--knock-text-muted)", fontSize: 14, marginBottom: 24 }}>
-          무료 상담을 통해 우리 병원에 맞는 맞춤 전략을 설계해드립니다.
-        </p>
-        <a
-          href="https://tally.so/r/q45d67"
-          target="_blank"
-          rel="noopener noreferrer"
-          style={{
-            display: "inline-flex",
-            alignItems: "center",
-            gap: 8,
-            background: "var(--knock-primary)",
-            color: "var(--knock-text-bright)",
-            fontWeight: 700,
-            fontSize: 16,
-            padding: "14px 32px",
-            borderRadius: "var(--knock-radius-md)",
-            textDecoration: "none",
-            boxShadow: "var(--knock-glow-primary)",
-          }}
-        >
-          무료 상담 시작하기 →
-        </a>
-      </div>
-    </>
+      <section className="section-padding" style={{ textAlign: "center" }}>
+        <div className="content-max" style={{ padding: "0 24px" }}>
+          <h2 className="text-3xl md:text-5xl font-black mb-4">
+            이 시스템을 우리 병원에<br />
+            <span className="text-primary">적용하고 싶다면</span>
+          </h2>
+          <p className="text-muted-foreground text-base md:text-lg mb-8">
+            무료 상담을 통해 우리 병원에 맞는 맞춤 전략을 설계해드립니다.
+          </p>
+          <a
+            href="https://tally.so/r/q45d67"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="glow-button"
+            style={{
+              display: "inline-flex",
+              alignItems: "center",
+              gap: 8,
+              background: "var(--knock-primary)",
+              color: "#ffffff",
+              fontWeight: 700,
+              fontSize: 16,
+              padding: "14px 32px",
+              borderRadius: 12,
+              textDecoration: "none",
+            }}
+          >
+            무료 상담 시작하기 →
+          </a>
+        </div>
+      </section>
+
+      <Footer />
+    </div>
   );
 }

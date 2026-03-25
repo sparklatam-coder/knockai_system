@@ -182,6 +182,36 @@ export function useClientDetail(clientId: string) {
     [clientId, refresh, session?.access_token],
   );
 
+  const updateClient = useCallback(
+    async (fields: Record<string, unknown>, logo?: File | null) => {
+      if (!session?.access_token) return { error: "세션이 없습니다." };
+
+      let response: Response;
+      if (logo) {
+        const formData = new FormData();
+        formData.append("data", JSON.stringify(fields));
+        formData.append("logo", logo);
+        response = await fetch(`/api/admin/clients/${encodedId}`, {
+          method: "PATCH",
+          headers: { Authorization: `Bearer ${session.access_token}` },
+          body: formData,
+        });
+      } else {
+        response = await fetch(`/api/admin/clients/${encodedId}`, {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json", Authorization: `Bearer ${session.access_token}` },
+          body: JSON.stringify(fields),
+        });
+      }
+
+      const json = (await response.json()) as { error?: string };
+      if (!response.ok) return { error: json.error ?? "고객 정보 수정에 실패했습니다." };
+      await refresh();
+      return { error: null };
+    },
+    [encodedId, refresh, session?.access_token],
+  );
+
   const updateGuide = useCallback(
     async (subNodeId: string, guideContent: string | null, guideLinks: GuideLink[]) => {
       if (!session?.access_token) return { error: "세션이 없습니다." };
@@ -210,8 +240,9 @@ export function useClientDetail(clientId: string) {
       createLog,
       updateLog,
       deleteLog,
+      updateClient,
       updateGuide,
     }),
-    [createLog, data, deleteLog, error, loading, refresh, saving, toggleSubNode, updateLog, updateGuide, updateNodeStatus],
+    [createLog, data, deleteLog, error, loading, refresh, saving, toggleSubNode, updateClient, updateLog, updateGuide, updateNodeStatus],
   );
 }

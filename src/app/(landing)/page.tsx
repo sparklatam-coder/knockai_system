@@ -1,5 +1,6 @@
 "use client";
 
+import { useState, useCallback } from "react";
 import Link from "next/link";
 import { GlobalNav } from "@/components/layout/GlobalNav";
 import { Footer } from "@/components/landing/Footer";
@@ -11,6 +12,8 @@ import { DoorKnockHero } from "@/components/landing/DoorKnockHero";
 import { useCounter } from "@/hooks/useScrollAnimation";
 
 export default function LandingPage() {
+  const [doorProgress, setDoorProgress] = useState(0);
+  const handleDoorProgress = useCallback((p: number) => setDoorProgress(p), []);
   const mau = useCounter(2650, 2000, "\uB9CC");
   const share = useCounter(68, 2000, "%");
   const revenue = useCounter(300, 2500, "%");
@@ -78,10 +81,18 @@ export default function LandingPage() {
     <div className="min-h-screen bg-background overflow-hidden premium-grain">
       <GlobalNav />
 
-      {/* Hero */}
-      <section className="relative pt-32 pb-20 min-h-screen flex items-center">
-        <DoorKnockHero />
-        <div className="container mx-auto px-6 relative">
+      {/* Hero — scroll-driven door opening */}
+      <div style={{ height: "145vh", position: "relative" }}>
+      <section className="sticky top-0 relative pt-32 pb-20 h-screen flex items-center overflow-hidden">
+        <DoorKnockHero enableScrollOpen onProgress={handleDoorProgress} />
+        <div
+          className="container mx-auto px-6 relative"
+          style={{
+            opacity: Math.max(0, 1 - doorProgress * 2.5),
+            transform: `translateY(${-doorProgress * 60}px)`,
+            willChange: doorProgress > 0 ? "opacity, transform" : undefined,
+          }}
+        >
           <div className="content-max text-center">
             <AnimatedSection>
               <div className="knock-badge-premium mb-8 mx-auto w-fit">
@@ -127,13 +138,13 @@ export default function LandingPage() {
 
             <AnimatedSection delay={0.3}>
               <div className="flex flex-col sm:flex-row gap-4 justify-center">
-                <Button size="lg" className="bg-[var(--knock-primary)] text-white hover:bg-[var(--knock-primary-hover)] font-bold text-lg px-8 py-6 rounded-xl glow-button-gold group" asChild>
+                <Button size="lg" className="bg-primary text-primary-foreground hover:bg-primary/90 font-bold text-lg px-8 py-6 rounded-xl glow-button-gold group" asChild>
                   <a href="https://tally.so/r/q45d67" target="_blank" rel="noopener noreferrer">
                     무료 상담 시작하기
                     <ArrowRight className="ml-2 h-5 w-5 group-hover:translate-x-1 transition-transform" />
                   </a>
                 </Button>
-                <Button size="lg" variant="outline" className="border-2 border-[var(--knock-primary)] text-foreground hover:bg-[var(--knock-primary)]/10 font-semibold text-lg px-8 py-6 rounded-xl group" asChild>
+                <Button size="lg" variant="outline" className="border-2 border-primary text-foreground hover:bg-primary/5 font-semibold text-lg px-8 py-6 rounded-xl group" asChild>
                   <a href="https://tally.so/r/q45d67" target="_blank" rel="noopener noreferrer">
                     우리 병원 순위 확인하기
                     <ArrowRight className="ml-2 h-5 w-5 group-hover:translate-x-1 transition-transform" />
@@ -162,15 +173,20 @@ export default function LandingPage() {
               </Link>
             </AnimatedSection>
 
-            {/* Scroll indicator */}
+            {/* Scroll indicator — fades with door progress */}
             <AnimatedSection delay={0.5}>
-              <div className="mt-12 flex justify-center animate-bounce">
+              <div
+                className="mt-12 flex flex-col items-center gap-2 animate-bounce"
+                style={{ opacity: Math.max(0, 1 - doorProgress * 5) }}
+              >
+                <span className="text-xs text-muted-foreground tracking-wider">스크롤하여 문을 열어보세요</span>
                 <ChevronDown className="w-6 h-6 text-muted-foreground" />
               </div>
             </AnimatedSection>
           </div>
         </div>
       </section>
+      </div>{/* end scroll-driven hero wrapper */}
 
       <div className="section-divider" />
 
@@ -656,7 +672,7 @@ export default function LandingPage() {
                 <AnimatedSection key={i} delay={i * 0.1}>
                   <Link
                     href={card.href}
-                    className="block text-center transition-all hover:shadow-[0_4px_20px_rgba(233,69,96,0.15)]"
+                    className="block text-center transition-all hover:shadow-[0_10px_40px_rgba(30,64,175,0.08)]"
                     style={{
                       background: "var(--knock-bg-card)",
                       border: "1px solid var(--knock-border)",
@@ -667,7 +683,7 @@ export default function LandingPage() {
                     onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.borderColor = "var(--knock-border)"; }}
                   >
                     <div className="text-2xl mb-3">{card.emoji}</div>
-                    <h3 className="text-base font-bold text-white mb-2">{card.title}</h3>
+                    <h3 className="text-base font-bold text-foreground mb-2">{card.title}</h3>
                     <p className="text-[13px] text-[var(--knock-text-muted)] mb-4">{card.sub}</p>
                     <span className="text-[var(--knock-primary)] text-sm font-semibold">자세히 보기 →</span>
                   </Link>

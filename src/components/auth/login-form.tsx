@@ -26,55 +26,95 @@ export function LoginForm() {
       return;
     }
 
-    // 로그인 성공: 전체 페이지 리로드로 미들웨어가 새 쿠키를 인식하도록 함
     const redirectTo = searchParams.get("redirectTo") ?? "/admin/clients";
     window.location.href = redirectTo;
   }
 
   return (
-    <section className="auth-card">
-      <div className="auth-header">
-        <span className="hero-badge">KNOCK 병원 마케팅 시스템</span>
-        <h1>로그인</h1>
-        <p>담당자 계정으로 로그인하여 대시보드를 확인하세요.</p>
+    <div className="login-container">
+      {/* Background decorations */}
+      <div className="login-bg">
+        <div className="login-bg-orb login-bg-orb--1" />
+        <div className="login-bg-orb login-bg-orb--2" />
+        <div className="login-bg-orb login-bg-orb--3" />
       </div>
 
-      <form className="auth-form" onSubmit={handleSubmit}>
-        <label>
-          <span>이메일</span>
-          <input
-            autoComplete="email"
-            onChange={(event) => setEmail(event.target.value)}
-            placeholder="hospital@example.com"
-            type="email"
-            value={email}
-          />
-        </label>
+      <section className="login-card">
+        {/* Top accent line */}
+        <div className="login-card-accent" />
 
-        <label>
-          <span>비밀번호</span>
-          <input
-            autoComplete="current-password"
-            onChange={(event) => setPassword(event.target.value)}
-            placeholder="••••••••"
-            type="password"
-            value={password}
-          />
-        </label>
+        <div className="login-header">
+          <div className="login-logo">
+            <span>KN</span>
+            <span className="login-logo-o">
+              <span className="login-logo-ring" />
+              <span className="login-logo-dot" />
+            </span>
+            <span>CK</span>
+          </div>
+          <h1>로그인</h1>
+          <p>담당자 계정으로 로그인하여 대시보드를 확인하세요.</p>
+        </div>
 
-        {errorMessage ? <p className="form-error">{errorMessage}</p> : null}
+        <form className="login-form" onSubmit={handleSubmit}>
+          <label className="login-field">
+            <span className="login-label">이메일</span>
+            <div className="login-input-wrap">
+              <svg className="login-input-icon" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+                <rect x="2" y="4" width="16" height="12" rx="3" />
+                <path d="M2 7l8 5 8-5" />
+              </svg>
+              <input
+                autoComplete="email"
+                onChange={(event) => setEmail(event.target.value)}
+                placeholder="hospital@example.com"
+                type="email"
+                value={email}
+              />
+            </div>
+          </label>
 
-        {!configured ? (
-          <p className="form-hint">
-            `.env.local`에 Supabase 공개 키를 넣으면 실제 로그인 테스트가 가능합니다.
-          </p>
-        ) : null}
+          <label className="login-field">
+            <span className="login-label">비밀번호</span>
+            <div className="login-input-wrap">
+              <svg className="login-input-icon" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+                <rect x="4" y="9" width="12" height="8" rx="2" />
+                <path d="M7 9V6a3 3 0 016 0v3" />
+              </svg>
+              <input
+                autoComplete="current-password"
+                onChange={(event) => setPassword(event.target.value)}
+                placeholder="••••••••"
+                type="password"
+                value={password}
+              />
+            </div>
+          </label>
 
-        <button className="primary-button" disabled={isSubmitting || !configured} type="submit">
-          {isSubmitting ? "로그인 중..." : "로그인"}
-        </button>
-      </form>
+          {errorMessage ? <p className="login-error">{errorMessage}</p> : null}
 
-    </section>
+          {!configured ? (
+            <p className="login-hint">
+              .env.local에 Supabase 공개 키를 넣으면 실제 로그인 테스트가 가능합니다.
+            </p>
+          ) : null}
+
+          <button className="login-submit" disabled={isSubmitting || !configured} type="submit">
+            {isSubmitting ? (
+              <>
+                <span className="login-spinner" />
+                로그인 중...
+              </>
+            ) : (
+              "로그인"
+            )}
+          </button>
+        </form>
+
+        <div className="login-footer">
+          <Link href="/">← 홈으로 돌아가기</Link>
+        </div>
+      </section>
+    </div>
   );
 }

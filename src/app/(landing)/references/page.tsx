@@ -3,26 +3,30 @@
 import React, { useState, useEffect, useRef, ReactNode } from "react";
 import Link from "next/link";
 import { GlobalNav } from "@/components/layout/GlobalNav";
+import { Footer } from "@/components/landing/Footer";
+import { AnimatedSection } from "@/components/landing/AnimatedSection";
+import { DoorKnockHero } from "@/components/landing/DoorKnockHero";
+import { BarChart3 } from "lucide-react";
 
 /* ─────────────────────────────────────────────
    Style tokens
    ───────────────────────────────────────────── */
 const T = {
-  bg:        "var(--bg,        #060611)",
-  bgCard:    "var(--bg-card,   #0d0d1a)",
-  bgHover:   "var(--bg-hover,  #141428)",
-  accent:    "var(--accent,    #e94560)",
-  accentDim: "var(--accent-dim,rgba(233,69,96,.15))",
-  green:     "var(--green,     #34c759)",
-  greenDim:  "var(--green-dim, rgba(52,199,89,.12))",
-  yellow:    "var(--yellow,    #f9a825)",
-  yellowDim: "var(--yellow-dim,rgba(249,168,37,.12))",
-  blue:      "var(--blue,      #4a9eff)",
-  gw:        "var(--gw,        rgba(255,255,255,.06))",
-  text:      "var(--text,      #eaeaef)",
-  muted:     "var(--muted,     #72728a)",
-  dim:       "var(--dim,       #3a3a52)",
-  border:    "var(--border,    #1e1e32)",
+  bg:        "var(--bg,        #f0f6ff)",
+  bgCard:    "var(--bg-card,   #ffffff)",
+  bgHover:   "var(--bg-hover,  #f1f5f9)",
+  accent:    "var(--accent,    #1e40af)",
+  accentDim: "var(--accent-dim,rgba(30,64,175,.08))",
+  green:     "var(--green,     #059669)",
+  greenDim:  "var(--green-dim, rgba(5,150,105,.08))",
+  yellow:    "var(--yellow,    #d97706)",
+  yellowDim: "var(--yellow-dim,rgba(217,119,6,.08))",
+  blue:      "var(--blue,      #3b82f6)",
+  gw:        "var(--gw,        rgba(0,0,0,.03))",
+  text:      "var(--text,      #1e293b)",
+  muted:     "var(--muted,     #64748b)",
+  dim:       "var(--dim,       #cbd5e1)",
+  border:    "var(--border,    #e2e8f0)",
 };
 
 const NAVER = "#03C75A";
@@ -57,13 +61,13 @@ function Badge({ children, color = T.accent }: { children: ReactNode; color?: st
 
 function SectionTag({ num, label }: { num: string; label: string }) {
   return (
-    <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 14 }}>
+    <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 10, marginBottom: 14 }}>
       <span style={{
-        width: 28, height: 28, borderRadius: "50%", background: T.accent,
+        width: 28, height: 28, borderRadius: "50%", background: "hsl(224 76% 40%)",
         display: "inline-flex", alignItems: "center", justifyContent: "center",
         color: "#fff", fontWeight: 800, fontSize: 13,
       }}>{num}</span>
-      <span style={{ color: T.accent, fontSize: 12, fontWeight: 700, letterSpacing: 2.5, textTransform: "uppercase" }}>{label}</span>
+      <span style={{ color: "hsl(224 76% 40%)", fontSize: 13, fontWeight: 700, letterSpacing: 2.5, textTransform: "uppercase" }}>{label}</span>
     </div>
   );
 }
@@ -86,7 +90,7 @@ function TierBadge({ tier, extra }: { tier: "basic" | "premium" | "platinum"; ex
   const colors: Record<string, { bg: string; color: string; border?: string }> = {
     basic: { bg: `${T.blue}20`, color: T.blue, border: `1px solid ${T.blue}40` },
     premium: { bg: "linear-gradient(135deg, #f9a825, #e68a00)", color: "#fff" },
-    platinum: { bg: "linear-gradient(135deg, #e94560, #c73a54)", color: "#fff" },
+    platinum: { bg: "linear-gradient(135deg, #1e40af, #1d4ed8)", color: "#fff" },
   };
   const c = colors[tier];
   return (
@@ -849,13 +853,13 @@ function CaseCard({ c }: { c: ClientCase }) {
                     <div style={{ fontSize: 13, color: "#f9a825", fontWeight: 600, marginBottom: 8 }}>
                       ⚠️ 타 업체 5개월간 운영 (11월 이관 전)
                     </div>
-                    <div style={{ fontFamily: "Outfit, sans-serif", fontSize: 36, fontWeight: 900, color: "#f9a825", lineHeight: 1.2 }}>
+                    <div style={{ fontFamily: "Outfit, sans-serif", fontSize: 36, fontWeight: 900, color: T.yellow, lineHeight: 1.2 }}>
                       5~8위
                     </div>
-                    <div style={{ fontSize: 15, color: "#72728a", marginTop: 4 }}>
+                    <div style={{ fontSize: 15, color: T.muted, marginTop: 4 }}>
                       오르락 내리락
                     </div>
-                    <div style={{ fontSize: 12, color: "#3a3a52", marginTop: 10 }}>
+                    <div style={{ fontSize: 12, color: T.dim, marginTop: 10 }}>
                       5개월간 상위권 진입 실패
                     </div>
                   </div>
@@ -877,10 +881,7 @@ export default function ReferencesPage() {
   const premiumCases = CLIENT_CASES.filter(c => c.tier === "premium");
 
   return (
-    <main style={{
-      background: T.bg, color: T.text, minHeight: "100vh",
-      fontFamily: "var(--font-noto-sans-kr, sans-serif)",
-    }}>
+    <div className="min-h-screen bg-background overflow-hidden">
       <style>{`
         @keyframes fadeSlide { from { opacity:0; transform:translateX(-12px); } to { opacity:1; transform:none; } }
         .rank-grid {
@@ -900,168 +901,182 @@ export default function ReferencesPage() {
       <GlobalNav />
 
       {/* ── HERO ── */}
-      <header style={{
-        padding: "40px 24px 24px", textAlign: "center", position: "relative",
-        background: `radial-gradient(ellipse at 50% 0%, rgba(15,52,96,.3) 0%, transparent 60%)`,
-      }}>
-        <h1 style={{ fontSize: "clamp(28px, 5vw, 48px)", fontWeight: 900, lineHeight: 1.15, margin: "10px 0 10px" }}>
-          숫자로 증명하는<br />
-          <span style={{ color: T.accent }}>병원 마케팅 레퍼런스</span>
-        </h1>
-        <p style={{ color: T.muted, fontSize: 15, maxWidth: 460, margin: "0 auto 16px", lineHeight: 1.7 }}>
-          네이버 플레이스 상위 노출부터 유튜브 채널 성장까지,<br />
-          실제 고객사의 성과를 투명하게 공개합니다.
-        </p>
+      <section className="relative pt-32 pb-20 min-h-screen flex items-center">
+        <DoorKnockHero />
+        <div className="container mx-auto px-6 relative">
+          <div className="content-max text-center">
+            <AnimatedSection>
+              <div className="knock-badge-premium mb-8 mx-auto w-fit">
+                실제 고객사 성과 공개
+              </div>
+            </AnimatedSection>
 
-        {/* Capability pills */}
-        <div style={{ display: "flex", justifyContent: "center", flexWrap: "wrap", gap: 8 }}>
-          {CLIENT_CASES.map(c => (
-            <a key={c.id} href={`#${c.id}`} style={{
-              display: "inline-flex", alignItems: "center", gap: 5,
-              padding: "6px 14px", borderRadius: 8, fontSize: 12, fontWeight: 700,
-              color: c.accentColor, background: `${c.accentColor}12`,
-              border: `1px solid ${c.accentColor}25`, textDecoration: "none",
-              transition: "background .2s",
-            }}>
-              {c.capabilityIcon} {c.capabilityLabel}
-            </a>
-          ))}
+            <AnimatedSection delay={0.1}>
+              <h1 className="text-4xl md:text-6xl lg:text-7xl font-black leading-tight mb-6 premium-title">
+                숫자로 증명하는
+                <br />
+                <span className="gradient-text text-5xl md:text-7xl lg:text-[5.4rem]">병원 마케팅 레퍼런스</span>
+              </h1>
+            </AnimatedSection>
+
+            <AnimatedSection delay={0.2}>
+              <p className="text-lg md:text-xl text-muted-foreground max-w-2xl mx-auto mb-10 leading-relaxed">
+                네이버 플레이스 상위 노출부터 유튜브 채널 성장까지,
+                <br />
+                실제 고객사의 성과를 투명하게 공개합니다.
+              </p>
+            </AnimatedSection>
+
+            <AnimatedSection delay={0.3}>
+              <div className="flex justify-center flex-wrap gap-3">
+                {CLIENT_CASES.map(c => (
+                  <a key={c.id} href={`#${c.id}`} className="inline-flex items-center gap-2 px-4 py-2 rounded-full text-sm font-bold transition-colors hover:opacity-80" style={{
+                    color: c.accentColor, background: `${c.accentColor}12`,
+                    border: `1px solid ${c.accentColor}25`, textDecoration: "none",
+                  }}>
+                    {c.capabilityIcon} {c.capabilityLabel}
+                  </a>
+                ))}
+              </div>
+            </AnimatedSection>
+          </div>
         </div>
-      </header>
+      </section>
 
       {/* ── SECTION 1 — BASIC CASES (순위) ── */}
-      <section style={{ maxWidth: 900, margin: "0 auto", padding: "0 24px 40px" }}>
-        <SectionTag num="1" label="Naver Place Ranking" />
-        <h2 style={{ fontSize: 28, fontWeight: 900, marginBottom: 6 }}>순위가 증명합니다</h2>
-        <p style={{ color: T.muted, fontSize: 14, marginBottom: 20 }}>
-          카드를 클릭하면 일별 순위 트래킹 데이터를 볼 수 있습니다.
-        </p>
-        <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
-          {basicCases.map(c => <CaseCard key={c.id} c={c} />)}
-        </div>
-      </section>
+      <section className="section-padding">
+        <div className="container mx-auto px-6">
+          <div className="content-max">
+            <AnimatedSection>
+              <SectionTag num="1" label="Naver Place Ranking" />
+              <h2 className="text-3xl md:text-5xl font-black text-center mb-4">순위가 증명합니다</h2>
+              <p className="text-muted-foreground text-center text-base md:text-lg mb-12">
+                카드를 클릭하면 일별 순위 트래킹 데이터를 볼 수 있습니다.
+              </p>
+            </AnimatedSection>
 
-      {/* ── DIVIDER ── */}
-      <div style={{
-        maxWidth: 900, margin: "0 auto", padding: "20px 24px 40px",
-        display: "flex", alignItems: "center", gap: 16,
-      }}>
-        <div style={{ flex: 1, height: 1, background: `linear-gradient(to right, transparent, ${T.border})` }} />
-        <span style={{ fontSize: 13, fontWeight: 700, color: T.accent, whiteSpace: "nowrap" }}>
-          순위를 넘어, 비즈니스 전체를
-        </span>
-        <div style={{ flex: 1, height: 1, background: `linear-gradient(to left, transparent, ${T.border})` }} />
-      </div>
-
-      {/* ── SECTION 2 — PLATINUM CASES (풀서비스) ── */}
-      <section style={{ maxWidth: 900, margin: "0 auto", padding: "0 24px 60px" }}>
-        <SectionTag num="2" label="Full Service" />
-        <h2 style={{ fontSize: 28, fontWeight: 900, marginBottom: 8 }}>풀서비스로 성장시킵니다</h2>
-        <p style={{ color: T.muted, fontSize: 14, marginBottom: 36 }}>
-          순위 관리를 넘어 자동화, 콘텐츠, 채널 성장까지 책임집니다.
-        </p>
-        <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
-          {premiumCases.map(c => <CaseCard key={c.id} c={c} />)}
-        </div>
-      </section>
-
-      {/* ── SECTION 3 — TRACKING ── */}
-      <section style={{ maxWidth: 900, margin: "0 auto", padding: "0 24px 60px" }}>
-        <SectionTag num="3" label="Tracking System" />
-        <h2 style={{ fontSize: 28, fontWeight: 900, marginBottom: 8 }}>실시간으로 확인하세요</h2>
-        <p style={{ color: T.muted, fontSize: 14, marginBottom: 36 }}>
-          고객님 전용 대시보드에서 순위·활동·성과를 24시간 확인할 수 있습니다.
-        </p>
-
-        <div style={{
-          background: T.bgCard, border: `1px solid ${T.border}`, borderRadius: 16,
-          padding: 28, display: "flex", flexDirection: "column", gap: 20,
-        }}>
-          <div style={{ display: "flex", flexWrap: "wrap", gap: 10 }}>
-            {["📊 일별 순위 트래킹", "📝 활동 로그 타임라인", "✅ 서브노드 체크리스트", "📎 리포트 첨부", "🔒 패키지별 잠금/해제"].map((f, i) => (
-              <span key={i} style={{
-                background: T.gw, border: `1px solid ${T.border}`,
-                padding: "8px 16px", borderRadius: 10, fontSize: 13, fontWeight: 600, color: T.blue,
-              }}>{f}</span>
-            ))}
-          </div>
-
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))", gap: 14 }}>
-            {[
-              { step: "01", title: "계약 시 계정 발급", desc: "전용 로그인 제공" },
-              { step: "02", title: "노크 시스템 상태 표시", desc: "초록/노랑/회색 실시간" },
-              { step: "03", title: "활동 로그 기록", desc: "모든 작업 내역 공개" },
-              { step: "04", title: "월간 리포트", desc: "성과 요약 제공" },
-            ].map((s, i) => (
-              <div key={i} style={{ background: T.gw, borderRadius: 12, padding: "16px 14px" }}>
-                <div style={{ color: T.accent, fontSize: 11, fontWeight: 800, marginBottom: 6 }}>{s.step}</div>
-                <div style={{ fontSize: 14, fontWeight: 700, marginBottom: 4 }}>{s.title}</div>
-                <div style={{ fontSize: 12, color: T.muted }}>{s.desc}</div>
-              </div>
-            ))}
-          </div>
-
-          <div style={{
-            background: `linear-gradient(135deg, ${T.accentDim}, ${T.greenDim})`,
-            border: `1px solid ${T.border}`, borderRadius: 12, padding: 18,
-            fontSize: 14, color: T.text, textAlign: "center", fontWeight: 600,
-          }}>
-            🔐 숨기는 것 없이, 고객이 직접 확인하는 투명한 마케팅
-          </div>
-
-          <Link href="/system" style={{
-            display: "flex", alignItems: "center", justifyContent: "center", gap: 8,
-            padding: "14px 28px", borderRadius: 12, fontSize: 15, fontWeight: 700,
-            background: `linear-gradient(135deg, ${T.accent}, #c73a54)`,
-            color: "#fff", textDecoration: "none",
-            boxShadow: `0 4px 20px ${T.accentDim}`,
-            transition: "transform .2s, box-shadow .2s",
-          }}>
-            🔍 트래킹 솔루션 보러가기 →
-          </Link>
-        </div>
-      </section>
-
-      {/* ── CTA ── */}
-      <section style={{ maxWidth: 900, margin: "0 auto", padding: "0 24px 80px" }}>
-        <div style={{
-          background: `linear-gradient(135deg, ${T.bgCard}, rgba(15,52,96,.2))`,
-          border: `1px solid ${T.border}`, borderRadius: 20,
-          padding: "52px 32px", textAlign: "center", position: "relative", overflow: "hidden",
-        }}>
-          <div style={{
-            position: "absolute", top: "50%", left: "50%", transform: "translate(-50%,-50%)",
-            width: 320, height: 320, borderRadius: "50%",
-            background: `radial-gradient(circle, ${T.accent}0c, transparent 70%)`,
-          }} />
-          <div style={{ position: "relative" }}>
-            <h2 style={{ fontSize: 26, fontWeight: 900, marginBottom: 10 }}>지금 시작하세요</h2>
-            <p style={{ color: T.muted, fontSize: 14, maxWidth: 380, margin: "0 auto 28px", lineHeight: 1.7 }}>
-              귀사 지역의 경쟁 분석 리포트를 무료로 제공합니다.<br />
-              동별 독점이므로, 선점이 중요합니다.
-            </p>
-            <a href="tel:010-0000-0000" style={{
-              display: "inline-flex", alignItems: "center", gap: 8,
-              background: T.accent, color: "#fff", textDecoration: "none",
-              padding: "14px 32px", borderRadius: 12, fontSize: 15, fontWeight: 700,
-              boxShadow: `0 4px 20px ${T.accentDim}`,
-            }}>
-              📞 무료 상담 신청 →
-            </a>
-            <div style={{ marginTop: 14, fontSize: 12, color: T.dim }}>
-              노크AI · Knock
+            <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
+              {basicCases.map(c => <CaseCard key={c.id} c={c} />)}
             </div>
           </div>
         </div>
       </section>
 
-      {/* ── FOOTER ── */}
-      <footer style={{
-        borderTop: `1px solid ${T.border}`, padding: "24px", textAlign: "center",
-        fontSize: 12, color: T.dim,
-      }}>
-        노크 병원 마케팅 · 파이프라인 + CS 360 통합 전략
-      </footer>
-    </main>
+      {/* ── DIVIDER ── */}
+      <div className="content-max mx-auto px-6 py-8">
+        <div className="flex items-center gap-4">
+          <div className="flex-1 h-px bg-gradient-to-r from-transparent to-border" />
+          <span className="text-sm md:text-base font-bold text-primary whitespace-nowrap">
+            순위를 넘어, 비즈니스 전체를
+          </span>
+          <div className="flex-1 h-px bg-gradient-to-l from-transparent to-border" />
+        </div>
+      </div>
+
+      {/* ── SECTION 2 — PLATINUM CASES (풀서비스) ── */}
+      <section className="section-padding">
+        <div className="container mx-auto px-6">
+          <div className="content-max">
+            <AnimatedSection>
+              <SectionTag num="2" label="Full Service" />
+              <h2 className="text-3xl md:text-5xl font-black text-center mb-4">풀서비스로 성장시킵니다</h2>
+              <p className="text-muted-foreground text-center text-base md:text-lg mb-12">
+                순위 관리를 넘어 자동화, 콘텐츠, 채널 성장까지 책임집니다.
+              </p>
+            </AnimatedSection>
+
+            <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
+              {premiumCases.map(c => <CaseCard key={c.id} c={c} />)}
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* ── SECTION 3 — TRACKING ── */}
+      <section className="section-padding">
+        <div className="container mx-auto px-6">
+          <div className="content-max">
+            <AnimatedSection>
+              <SectionTag num="3" label="Tracking System" />
+              <h2 className="text-3xl md:text-5xl font-black text-center mb-4">실시간으로 확인하세요</h2>
+              <p className="text-muted-foreground text-center text-base md:text-lg mb-12">
+                고객님 전용 대시보드에서 순위·활동·성과를 24시간 확인할 수 있습니다.
+              </p>
+            </AnimatedSection>
+
+            <div className="knock-card p-7" style={{ display: "flex", flexDirection: "column", gap: 20 }}>
+              <div className="flex flex-wrap gap-3">
+                {["📊 일별 순위 트래킹", "📝 활동 로그 타임라인", "✅ 서브노드 체크리스트", "📎 리포트 첨부", "🔒 패키지별 잠금/해제"].map((f, i) => (
+                  <span key={i} className="px-4 py-2 rounded-lg text-sm font-semibold border" style={{
+                    background: "hsl(var(--primary) / 0.04)", borderColor: "hsl(var(--border))", color: "hsl(var(--primary))",
+                  }}>{f}</span>
+                ))}
+              </div>
+
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                {[
+                  { step: "01", title: "계약 시 계정 발급", desc: "전용 로그인 제공" },
+                  { step: "02", title: "노크 시스템 상태 표시", desc: "초록/노랑/회색 실시간" },
+                  { step: "03", title: "활동 로그 기록", desc: "모든 작업 내역 공개" },
+                  { step: "04", title: "월간 리포트", desc: "성과 요약 제공" },
+                ].map((s, i) => (
+                  <div key={i} className="rounded-xl p-4" style={{ background: "hsl(var(--primary) / 0.04)" }}>
+                    <div className="text-primary text-xs font-extrabold mb-2">{s.step}</div>
+                    <div className="text-sm font-bold text-foreground mb-1">{s.title}</div>
+                    <div className="text-xs text-muted-foreground">{s.desc}</div>
+                  </div>
+                ))}
+              </div>
+
+              <div className="rounded-xl p-5 text-center font-semibold text-sm text-foreground" style={{
+                background: "linear-gradient(135deg, hsl(var(--primary) / 0.06), hsl(var(--accent) / 0.04))",
+                border: "1px solid hsl(var(--border))",
+              }}>
+                숨기는 것 없이, 고객이 직접 확인하는 투명한 마케팅
+              </div>
+
+              <Link href="/system" className="glow-button flex items-center justify-center gap-2 py-4 rounded-xl text-base font-bold text-white" style={{
+                background: "linear-gradient(135deg, hsl(var(--primary)), hsl(var(--accent)))",
+                textDecoration: "none",
+              }}>
+                트래킹 솔루션 보러가기 →
+              </Link>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* ── CTA ── */}
+      <section className="section-padding relative">
+        <div className="absolute inset-0 pointer-events-none">
+          <div className="absolute bottom-0 left-1/2 -translate-x-1/2 w-[600px] h-[300px] bg-primary/10 rounded-full blur-[150px]" />
+        </div>
+        <div className="container mx-auto px-6 relative">
+          <div className="content-max text-center space-y-8">
+            <AnimatedSection>
+              <h2 className="text-3xl md:text-5xl font-black">
+                지금, 우리 병원의
+                <br />
+                <span className="text-primary">성장을 시작하세요</span>
+              </h2>
+            </AnimatedSection>
+            <AnimatedSection delay={0.1}>
+              <p className="text-muted-foreground text-lg">
+                귀사 지역의 경쟁 분석 리포트를 무료로 제공합니다.
+                <br />
+                동별 독점이므로, 선점이 중요합니다.
+              </p>
+            </AnimatedSection>
+            <AnimatedSection delay={0.2}>
+              <a href="https://tally.so/r/q45d67" target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-2 bg-primary text-primary-foreground hover:bg-primary/90 font-bold text-xl px-12 py-7 rounded-xl glow-button">
+                무료 상담 신청 →
+              </a>
+            </AnimatedSection>
+          </div>
+        </div>
+      </section>
+
+      <Footer />
+    </div>
   );
 }

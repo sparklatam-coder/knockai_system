@@ -2,11 +2,11 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
-import { NODE_META, LEAD_NURTURE_SPLIT } from "@/lib/constants";
+import { NODE_META, LEAD_NURTURE_SPLIT, PACKAGE_NODE_ACCESS, PACKAGE_INFO } from "@/lib/constants";
 import { useClientDetail } from "@/hooks/use-client-detail";
 import { useAuth } from "@/hooks/use-auth";
 import { HospitalLoadingScreen } from "@/components/HospitalLoadingScreen";
-import type { ActivityLog, AuthRole, GuideLink, LogType, NodeKey, NodeRecord, NodeStatus, SubNode } from "@/lib/types";
+import type { ActivityLog, AuthRole, Client, GuideLink, LogType, NodeKey, NodeRecord, NodeStatus, PackageTier, SubNode } from "@/lib/types";
 import { GuidePanel } from "@/components/admin/guide-panel";
 
 /* ── constants ──────────────────────────────────────── */
@@ -543,9 +543,9 @@ function NodeCard({
           )}
           <ul className="apple-checklist">
             {sortedSubs.map((sn) => (
-              <li key={sn.id}>
-                <div className="apple-checklist-item">
-                  <label className="apple-checkbox-label">
+              <li key={sn.id} style={{ position: "relative" }}>
+                <div className="apple-checklist-item" style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                  <label className="apple-checkbox-label" style={{ flex: 1, minWidth: 0 }}>
                     <input type="checkbox" className="apple-checkbox"
                       checked={sn.is_done}
                       disabled={isClient}
@@ -612,16 +612,190 @@ function NodeCard({
   );
 }
 
+/* ── client edit modal ──────────────────────────────── */
+const TIER_OPTIONS: PackageTier[] = ["entry", "basic", "standard", "premium", "platinum"];
+
+function ClientEditModal({
+  client,
+  onSave,
+  onClose,
+}: {
+  client: Client;
+  onSave: (fields: Record<string, unknown>, logo?: File | null) => Promise<{ error: string | null }>;
+  onClose: () => void;
+}) {
+  const [form, setForm] = useState({
+    name: client.name,
+    region: client.region ?? "",
+    contact_name: client.contact_name ?? "",
+    contact_phone: client.contact_phone ?? "",
+    contact_email: client.contact_email ?? "",
+    package_tier: client.package_tier,
+    contract_start: client.contract_start ?? "",
+    memo: client.memo ?? "",
+  });
+  const [logoFile, setLogoFile] = useState<File | null>(null);
+  const [logoPreview, setLogoPreview] = useState<string | null>(client.logo_url);
+  const [saving, setSaving] = useState(false);
+  const [err, setErr] = useState<string | null>(null);
+  const logoInputRef = useRef<HTMLInputElement>(null);
+
+  const set = (key: string, value: string) => setForm((p) => ({ ...p, [key]: value }));
+
+  const handleLogoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0] ?? null;
+    if (file) {
+      if (file.size > 2 * 1024 * 1024) { setErr("로고 파일은 2MB 이하만 가능합니다."); return; }
+      setLogoFile(file);
+      setLogoPreview(URL.createObjectURL(file));
+    }
+  };
+
+  const handleSubmit = async () => {
+    if (!form.name.trim()) { setErr("병원명은 필수입니다."); return; }
+    setSaving(true);
+    setErr(null);
+    const result = await onSave(form, logoFile);
+    setSaving(false);
+    if (result.error) { setErr(result.error); return; }
+    onClose();
+  };
+
+  const fieldStyle: React.CSSProperties = {
+    width: "100%", padding: "10px 14px", fontSize: 14,
+    border: "1px solid hsl(214 32% 91%)", borderRadius: 10,
+    background: "hsl(210 40% 98%)", color: "hsl(222 47% 11%)",
+    outline: "none", transition: "border-color 0.2s",
+  };
+  const labelStyle: React.CSSProperties = {
+    fontSize: 12, fontWeight: 600, color: "hsl(222 47% 11%)", marginBottom: 4,
+  };
+
+  return createPortal(
+    <div onClick={onClose} style={{
+      position: "fixed", inset: 0, zIndex: 99999,
+      background: "rgba(0,0,0,0.4)", backdropFilter: "blur(4px)",
+      display: "flex", alignItems: "center", justifyContent: "center",
+    }}>
+      <div onClick={(e) => e.stopPropagation()} style={{
+        background: "#fff", borderRadius: 16, padding: 28, width: 480, maxWidth: "92vw",
+        maxHeight: "90vh", overflowY: "auto",
+        boxShadow: "0 20px 60px rgba(0,0,0,0.15)",
+      }}>
+        <h2 style={{ fontSize: 20, fontWeight: 800, color: "hsl(222 47% 11%)", margin: "0 0 20px" }}>고객 정보 수정</h2>
+
+        <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
+          {/* Logo upload */}
+          <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
+            <div
+              onClick={() => logoInputRef.current?.click()}
+              style={{
+                width: 64, height: 64, borderRadius: 14, flexShrink: 0,
+                border: "2px dashed hsl(214 32% 85%)", cursor: "pointer",
+                display: "flex", alignItems: "center", justifyContent: "center",
+                overflow: "hidden", background: "hsl(210 40% 98%)",
+                transition: "border-color 0.2s",
+              }}
+            >
+              {logoPreview
+                ? <img src={logoPreview} alt="" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+                : <span style={{ fontSize: 24, color: "hsl(215 16% 72%)" }}>+</span>}
+            </div>
+            <div>
+              <p style={{ ...labelStyle, marginBottom: 2 }}>로고</p>
+              <p style={{ fontSize: 11, color: "hsl(215 16% 62%)", margin: 0 }}>
+                클릭하여 변경 (2MB 이하 이미지)
+              </p>
+            </div>
+            <input ref={logoInputRef} type="file" accept="image/*" onChange={handleLogoChange} style={{ display: "none" }} />
+          </div>
+
+          <div>
+            <p style={labelStyle}>병원명 *</p>
+            <input style={fieldStyle} value={form.name} onChange={(e) => set("name", e.target.value)} />
+          </div>
+
+          <div>
+            <p style={labelStyle}>지역</p>
+            <input style={fieldStyle} value={form.region} onChange={(e) => set("region", e.target.value)} placeholder="예: 서울 강남구" />
+          </div>
+
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
+            <div>
+              <p style={labelStyle}>패키지</p>
+              <select
+                style={{ ...fieldStyle, cursor: "pointer" }}
+                value={form.package_tier}
+                onChange={(e) => set("package_tier", e.target.value)}
+              >
+                {TIER_OPTIONS.map((t) => (
+                  <option key={t} value={t}>{PACKAGE_INFO[t].label} — {PACKAGE_INFO[t].price}</option>
+                ))}
+              </select>
+            </div>
+            <div>
+              <p style={labelStyle}>계약 시작일</p>
+              <input style={fieldStyle} type="date" value={form.contract_start} onChange={(e) => set("contract_start", e.target.value)} />
+            </div>
+          </div>
+
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
+            <div>
+              <p style={labelStyle}>담당자</p>
+              <input style={fieldStyle} value={form.contact_name} onChange={(e) => set("contact_name", e.target.value)} placeholder="담당자 이름" />
+            </div>
+            <div>
+              <p style={labelStyle}>담당자 연락처</p>
+              <input style={fieldStyle} value={form.contact_phone} onChange={(e) => set("contact_phone", e.target.value)} placeholder="010-0000-0000" />
+            </div>
+          </div>
+
+          <div>
+            <p style={labelStyle}>담당자 이메일</p>
+            <input style={fieldStyle} type="email" value={form.contact_email} onChange={(e) => set("contact_email", e.target.value)} placeholder="email@example.com" />
+          </div>
+
+          <div>
+            <p style={labelStyle}>메모</p>
+            <textarea
+              style={{ ...fieldStyle, minHeight: 70, resize: "vertical", fontFamily: "inherit" }}
+              value={form.memo}
+              onChange={(e) => set("memo", e.target.value)}
+              placeholder="내부 메모"
+            />
+          </div>
+        </div>
+
+        {err && <p style={{ marginTop: 12, color: "#e94560", fontSize: 13 }}>{err}</p>}
+
+        <div style={{ display: "flex", gap: 10, justifyContent: "flex-end", marginTop: 20 }}>
+          <button type="button" onClick={onClose} style={{
+            padding: "8px 18px", fontSize: 13, borderRadius: 10, cursor: "pointer",
+            border: "1px solid hsl(214 32% 91%)", background: "#fff", color: "hsl(215 16% 47%)",
+          }}>취소</button>
+          <button type="button" onClick={() => void handleSubmit()} disabled={saving} style={{
+            padding: "8px 22px", fontSize: 13, fontWeight: 700, borderRadius: 10, cursor: "pointer",
+            border: "none", background: "hsl(224 76% 40%)", color: "#fff",
+            opacity: saving ? 0.5 : 1,
+          }}>{saving ? "저장 중..." : "저장"}</button>
+        </div>
+      </div>
+    </div>,
+    document.body,
+  );
+}
+
 /* ── main component ─────────────────────────────────── */
 export function ClientDetailView({ clientId }: { clientId: string }) {
   const { session, role } = useAuth();
-  const { data, error, loading, saving, refresh, toggleSubNode, updateNodeStatus, createLog, updateLog, deleteLog, updateGuide } =
+  const { data, error, loading, saving, refresh, toggleSubNode, updateNodeStatus, createLog, updateLog, deleteLog, updateClient, updateGuide } =
     useClientDetail(clientId);
 
   // ── Global pending changes ──
   const [pendingChanges, setPendingChanges] = useState<PendingChanges>(EMPTY_PENDING);
   const [isSaving, setIsSaving] = useState(false);
   const [saveSuccess, setSaveSuccess] = useState(false);
+  const [editModalOpen, setEditModalOpen] = useState(false);
 
   const changedNodeCount = Object.keys(pendingChanges.nodes).length;
   const changedTaskCount = Object.keys(pendingChanges.tasks).length;
@@ -720,8 +894,11 @@ export function ClientDetailView({ clientId }: { clientId: string }) {
   if (loading) return <HospitalLoadingScreen />;
   if (error || !data) return <div className="error-banner">⚠️ {error ?? "고객 정보를 찾을 수 없습니다."}</div>;
 
+  const isClient = role === "client";
+  const allowedKeys = PACKAGE_NODE_ACCESS[data.client.package_tier] ?? [];
   const sortedNodes = data.nodes
     .slice()
+    .filter((n) => allowedKeys.includes(n.node_key))
     .sort((a, b) => NODE_META[a.node_key].order - NODE_META[b.node_key].order);
 
   const accessToken = session?.access_token ?? "";
@@ -729,69 +906,73 @@ export function ClientDetailView({ clientId }: { clientId: string }) {
   return (
     <div className="dashboard-content">
 
-      {/* ── Top: client info + activity log ── */}
-      <section className="apple-top-grid">
+      {/* ── Top: client info (full width) ── */}
+      <section>
         <div className="apple-info-card">
           <div className="apple-info-header">
-            <div className="apple-info-avatar">{data.client.name.slice(0, 1)}</div>
-            <div>
+            <div className="apple-info-avatar">
+              {data.client.logo_url
+                ? <img src={data.client.logo_url} alt="" style={{ width: "100%", height: "100%", objectFit: "cover", borderRadius: "inherit" }} />
+                : data.client.name.slice(0, 1)}
+            </div>
+            <div style={{ flex: 1 }}>
               <h2 className="apple-info-name">{data.client.name}</h2>
               <p className="apple-info-sub">{data.client.region || "지역 미입력"}</p>
             </div>
-          </div>
-          <div className="apple-meta-grid">
-            <div className="apple-meta-item">
-              <span className="apple-meta-label">패키지</span>
-              <span className="apple-meta-value">{data.client.package_tier}</span>
-            </div>
-            <div className="apple-meta-item">
-              <span className="apple-meta-label">계약 시작</span>
-              <span className="apple-meta-value">{data.client.contract_start || "미정"}</span>
-            </div>
-            <div className="apple-meta-item">
-              <span className="apple-meta-label">노드 수</span>
-              <span className="apple-meta-value">{data.nodes.length}개</span>
-            </div>
-            <div className="apple-meta-item">
-              <span className="apple-meta-label">Active</span>
-              <span className="apple-meta-value" style={{ color: "var(--status-active)" }}>
-                {data.nodes.filter((n) => n.status === "active").length}개
-              </span>
-            </div>
-          </div>
-        </div>
-
-        <div className="apple-log-card">
-          <div className="apple-log-header">
-            <span className="sec-label" style={{ marginBottom: 0 }}>전체 활동 로그</span>
-            <span className="apple-log-count">{data.activityLogs.length}건</span>
-          </div>
-          <ul className="apple-log-list" style={{ maxHeight: 240, overflowY: "auto" }}>
-            {[...data.activityLogs].sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime()).map((log) => (
-              <li key={log.id} className="apple-log-item">
-                <div className="apple-log-dot" style={{ background: log.visible_to_client ? "var(--status-active)" : "#5a6374" }} />
-                <div className="apple-log-body">
-                  <span className="apple-log-node">
-                    {NODE_META[log.node_key].emoji} {NODE_META[log.node_key].label}
-                    {" · "}
-                    <span style={{ color: LOG_TYPE_META[log.log_type ?? (log.visible_to_client ? "work" : "memo")].color }}>
-                      {LOG_TYPE_META[log.log_type ?? (log.visible_to_client ? "work" : "memo")].label}
-                    </span>
-                  </span>
-                  <span className="apple-log-content">{log.content}</span>
-                  {(log.image_urls?.length ?? 0) > 0 && (
-                    <span style={{ fontSize: 10, color: "var(--tdim)", marginLeft: 4 }}>📎 {log.image_urls.length}</span>
-                  )}
-                </div>
-                <span className="apple-log-date">
-                  {new Date(log.created_at).toLocaleDateString("ko-KR", { month: "short", day: "numeric" })}
-                </span>
-              </li>
-            ))}
-            {data.activityLogs.length === 0 && (
-              <li className="apple-log-empty">아직 활동 로그가 없습니다</li>
+            {!isClient && (
+              <button type="button" onClick={() => setEditModalOpen(true)} style={{
+                padding: "5px 14px", fontSize: 12, fontWeight: 600, borderRadius: 8,
+                border: "1.5px solid hsl(224 76% 40%)", background: "transparent",
+                color: "hsl(224 76% 40%)", cursor: "pointer", transition: "all 0.2s", flexShrink: 0,
+              }}>수정</button>
             )}
-          </ul>
+          </div>
+          <div style={{ display: "flex", gap: 20 }}>
+            {/* Left: info fields */}
+            <div className="apple-meta-grid" style={{ gridTemplateColumns: "repeat(3, 1fr)", flex: "0 0 auto", width: data.client.memo ? "50%" : "100%" }}>
+              <div className="apple-meta-item">
+                <span className="apple-meta-label">패키지</span>
+                <span className="apple-meta-value" style={{ color: PACKAGE_INFO[data.client.package_tier].color, fontWeight: 700 }}>
+                  {PACKAGE_INFO[data.client.package_tier].label}
+                </span>
+              </div>
+              <div className="apple-meta-item">
+                <span className="apple-meta-label">계약 시작</span>
+                <span className="apple-meta-value">{data.client.contract_start || "미정"}</span>
+              </div>
+              <div className="apple-meta-item">
+                <span className="apple-meta-label">담당자</span>
+                <span className="apple-meta-value">{data.client.contact_name || "—"}</span>
+              </div>
+              <div className="apple-meta-item">
+                <span className="apple-meta-label">연락처</span>
+                <span className="apple-meta-value">{data.client.contact_phone || "—"}</span>
+              </div>
+              <div className="apple-meta-item">
+                <span className="apple-meta-label">이메일</span>
+                <span className="apple-meta-value">{data.client.contact_email || "—"}</span>
+              </div>
+            </div>
+
+            {/* Right: memo */}
+            {data.client.memo && (
+              <div style={{
+                flex: 1, padding: 16, borderRadius: 12,
+                background: "hsl(210 40% 98%)", border: "1px solid hsl(214 32% 91%)",
+              }}>
+                <span style={{ fontSize: 11, fontWeight: 600, color: "hsl(215 16% 52%)", textTransform: "uppercase", letterSpacing: "0.5px" }}>메모</span>
+                <p style={{ margin: "8px 0 0", fontSize: 14, lineHeight: 1.8, color: "hsl(222 47% 20%)", whiteSpace: "pre-wrap" }}>{data.client.memo}</p>
+              </div>
+            )}
+          </div>
+
+          {editModalOpen && (
+            <ClientEditModal
+              client={data.client}
+              onSave={updateClient}
+              onClose={() => setEditModalOpen(false)}
+            />
+          )}
         </div>
       </section>
 
@@ -855,6 +1036,42 @@ export function ClientDetailView({ clientId }: { clientId: string }) {
             />
           )];
         })}
+      </section>
+
+      {/* ── Activity log (below node cards) ── */}
+      <section>
+        <div className="apple-log-card">
+          <div className="apple-log-header">
+            <span className="sec-label" style={{ marginBottom: 0 }}>전체 활동 로그</span>
+            <span className="apple-log-count">{data.activityLogs.length}건</span>
+          </div>
+          <ul className="apple-log-list" style={{ maxHeight: 480, overflowY: "auto" }}>
+            {[...data.activityLogs].sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime()).map((log) => (
+              <li key={log.id} className="apple-log-item">
+                <div className="apple-log-dot" style={{ background: log.visible_to_client ? "var(--status-active)" : "#5a6374" }} />
+                <div className="apple-log-body">
+                  <span className="apple-log-node">
+                    {NODE_META[log.node_key].emoji} {NODE_META[log.node_key].label}
+                    {" · "}
+                    <span style={{ color: LOG_TYPE_META[log.log_type ?? (log.visible_to_client ? "work" : "memo")].color }}>
+                      {LOG_TYPE_META[log.log_type ?? (log.visible_to_client ? "work" : "memo")].label}
+                    </span>
+                  </span>
+                  <span className="apple-log-content">{log.content}</span>
+                  {(log.image_urls?.length ?? 0) > 0 && (
+                    <span style={{ fontSize: 10, color: "var(--tdim)", marginLeft: 4 }}>📎 {log.image_urls.length}</span>
+                  )}
+                </div>
+                <span className="apple-log-date">
+                  {new Date(log.created_at).toLocaleDateString("ko-KR", { month: "short", day: "numeric" })}
+                </span>
+              </li>
+            ))}
+            {data.activityLogs.length === 0 && (
+              <li className="apple-log-empty">아직 활동 로그가 없습니다</li>
+            )}
+          </ul>
+        </div>
       </section>
 
       {/* ── Global floating save toast — hidden for client ── */}

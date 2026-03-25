@@ -1,0 +1,10 @@
+.next
+node_modules
+.git
+*.PNG
+docs
+scripts
+files
+MERGE_GUIDE_패키지티어_추가.md
+CHANGELOG.md
+references_page.tsx

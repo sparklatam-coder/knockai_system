@@ -5,6 +5,7 @@ import { Footer } from "@/components/landing/Footer";
 import { AnimatedSection } from "@/components/landing/AnimatedSection";
 import { Button } from "@/components/ui/button";
 import { ArrowRight, CheckCircle, MapPin, Search, Camera, Star, MessageSquare, TrendingUp, Users, BarChart3 } from "lucide-react";
+import { DoorKnockHero } from "@/components/landing/DoorKnockHero";
 import { useCounter } from "@/hooks/useScrollAnimation";
 
 export default function PlacePage() {
@@ -16,41 +17,31 @@ export default function PlacePage() {
 
       {/* Hero */}
       <section className="relative pt-32 pb-20 min-h-screen flex items-center">
-        <div className="absolute inset-0 pointer-events-none">
-          <div className="absolute top-1/3 left-1/3 w-[600px] h-[400px] bg-accent/5 rounded-full blur-[150px]" />
-        </div>
+        <DoorKnockHero />
         <div className="container mx-auto px-6 relative">
-          <div className="content-max">
+          <div className="content-max text-center">
             <AnimatedSection>
-              <div className="knock-badge mb-8 w-fit">
-                <MapPin className="w-4 h-4" />
+              <div className="knock-badge-premium mb-8 mx-auto w-fit">
                 네이버 플레이스 상위노출 전문
               </div>
             </AnimatedSection>
 
             <AnimatedSection delay={0.1}>
-              <h1 className="text-4xl md:text-6xl lg:text-7xl font-black leading-tight mb-6">
+              <h1 className="text-4xl md:text-6xl lg:text-7xl font-black leading-tight mb-6 premium-title">
                 네이버 지도에서
                 <br />
-                <span className="text-primary">1등으로 보이는 병원</span>
+                <span className="gradient-text text-5xl md:text-7xl lg:text-[5.4rem]">1등으로 보이는 병원</span>
                 <br />
                 만들어 드립니다
               </h1>
             </AnimatedSection>
 
             <AnimatedSection delay={0.2}>
-              <p className="text-lg md:text-xl text-muted-foreground max-w-lg mb-8 leading-relaxed">
+              <p className="text-lg md:text-xl text-muted-foreground max-w-2xl mx-auto mb-10 leading-relaxed">
                 월 2,650만 명이 사용하는 네이버 지도.
                 <br />
                 상위에 노출되면, 고객이 먼저 찾아옵니다.
               </p>
-            </AnimatedSection>
-
-            <AnimatedSection delay={0.25}>
-              <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-success/10 border border-success/30 text-success font-bold mb-8">
-                <TrendingUp className="w-4 h-4" />
-                69위 → 1위 달성
-              </div>
             </AnimatedSection>
 
             <AnimatedSection delay={0.3}>

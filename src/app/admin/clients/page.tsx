@@ -6,6 +6,7 @@ export default function AdminClientsPage() {
   return (
     <ProtectedRoute requireAdmin>
       <DashboardShell
+        hideNav
         title="고객 관리"
         description="병원 고객의 마케팅 서비스 현황을 관리하고, 신규 고객을 등록하세요."
       >

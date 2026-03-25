@@ -539,6 +539,17 @@ export function DashboardCanvas({ client, nodes, logs }: Props) {
 
   // Build nodeStatuses for SharedKnockSystem
   const nodeStatusMap: Record<string, DashboardNodeStatus> = {};
+  // Ensure all pipeline keys have status (even without DB records)
+  const pipeKeys = ["awareness", "lead_capture", "lead_nurture", "new_patient"];
+  for (const pk of pipeKeys) {
+    nodeStatusMap[pk] = {
+      status: byKey[pk]?.status ?? "inactive",
+      logCount: logCountByKey[pk] ?? 0,
+      locked: locked(pk),
+    };
+  }
+  nodeStatusMap["qualified"] = { ...nodeStatusMap["lead_nurture"] };
+  // Override with actual DB records
   for (const n of nodes) {
     nodeStatusMap[n.node_key] = {
       status: n.status,
@@ -559,21 +570,22 @@ export function DashboardCanvas({ client, nodes, logs }: Props) {
     cs_community: "community",
     cs_analytics: "analytics",
   };
-  for (const n of csNodes) {
-    const segId = csKeyToSegmentId[n.node_key];
-    if (segId) {
-      nodeStatusMap[segId] = {
-        status: n.status,
-        logCount: logCountByKey[n.node_key] ?? 0,
-        locked: locked(n.node_key),
-      };
-    }
+  // Always populate all 6 CS360 segment statuses (even if no DB record exists)
+  for (const csKey of csKeys) {
+    const segId = csKeyToSegmentId[csKey];
+    if (!segId) continue;
+    const dbNode = byKey[csKey];
+    nodeStatusMap[segId] = {
+      status: dbNode?.status ?? "inactive",
+      logCount: logCountByKey[csKey] ?? 0,
+      locked: locked(csKey),
+    };
   }
 
-  // Dashboard segments — 6 nodes (no "product"), use DB order
-  const dashboardSegments = csNodes.map((n, i) => {
-    const meta = NODE_META[n.node_key];
-    const segId = csKeyToSegmentId[n.node_key] ?? n.node_key;
+  // Dashboard segments — always show all 6 CS360 nodes on the wheel
+  const dashboardSegments = csKeys.map((csKey, i) => {
+    const meta = NODE_META[csKey as NodeKey];
+    const segId = csKeyToSegmentId[csKey] ?? csKey;
     const defaultSeg = DEFAULT_SEGMENTS.find((s) => s.id === segId);
     return {
       id: segId,
@@ -581,7 +593,7 @@ export function DashboardCanvas({ client, nodes, logs }: Props) {
       sublabel: defaultSeg?.sublabel ?? meta.description,
       icon: defaultSeg?.icon ?? meta.emoji,
       color: defaultSeg?.color ?? "var(--gP)",
-      angle: (360 / csNodes.length) * i,
+      angle: (360 / csKeys.length) * i,
     };
   });
 
@@ -655,7 +667,7 @@ export function DashboardCanvas({ client, nodes, logs }: Props) {
         {/* ── Summary cards ── */}
         <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 8 }}>
           {[
-            { icon: "📊", value: `${activeCount}/${nodes.length}`, label: "활성 노드", bg: "var(--status-active-bg)", color: "var(--text)" },
+            { icon: "📊", value: `${activeCount}/${nodes.length}`, label: "활성 박스", bg: "var(--status-active-bg)", color: "var(--text)" },
             { icon: "📋", value: `${logs.length}`, label: "활동 기록", bg: "var(--accent-bg)", color: "var(--text)" },
             { icon: "💎", value: PACKAGE_INFO[client.package_tier].label, label: PACKAGE_INFO[client.package_tier].price, bg: `${PACKAGE_INFO[client.package_tier].color}18`, color: PACKAGE_INFO[client.package_tier].color },
             { icon: "🕐", value: logs.length > 0 ? (() => { const d = Math.floor((Date.now() - new Date(logs[0].created_at).getTime()) / 864e5); return d === 0 ? "오늘" : `${d}일 전`; })() : "—", label: "마지막 업데이트", bg: "var(--status-progress-bg)", color: "var(--text)" },

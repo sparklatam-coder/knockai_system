@@ -1,53 +1,53 @@
-/* ── knockai landing theme variables (scoped) ── */
+/* ── knockai landing theme variables (scoped) — Light Premium ── */
 .landing-theme {
   /* Background tiers */
-  --background: 240 48% 5%;
-  --foreground: 240 10% 93%;
-  --card: 240 25% 8%;
-  --card-foreground: 240 10% 93%;
-  --card-hover: 240 22% 12%;
-  --popover: 240 25% 8%;
-  --popover-foreground: 240 10% 93%;
+  --background: 0 0% 100%;
+  --foreground: 222 47% 11%;
+  --card: 0 0% 100%;
+  --card-foreground: 222 47% 11%;
+  --card-hover: 210 40% 97%;
+  --popover: 0 0% 100%;
+  --popover-foreground: 222 47% 11%;
 
-  /* Coral Red accent */
-  --primary: 352 80% 59%;
+  /* Deep Navy Blue accent */
+  --primary: 224 76% 40%;
   --primary-foreground: 0 0% 100%;
 
-  /* Deep Blue */
-  --secondary: 215 72% 22%;
-  --secondary-foreground: 240 10% 93%;
+  /* Lighter Blue */
+  --secondary: 210 40% 96%;
+  --secondary-foreground: 222 47% 11%;
 
-  /* Light Blue */
-  --accent: 213 100% 65%;
-  --accent-foreground: 240 30% 4%;
+  /* Accent Blue */
+  --accent: 217 91% 60%;
+  --accent-foreground: 0 0% 100%;
 
-  --muted: 240 15% 15%;
-  --muted-foreground: 240 10% 50%;
+  --muted: 210 40% 96%;
+  --muted-foreground: 215 16% 47%;
 
   --destructive: 0 84% 60%;
   --destructive-foreground: 0 0% 100%;
 
-  --success: 141 70% 49%;
-  --warning: 43 95% 56%;
+  --success: 160 84% 39%;
+  --warning: 43 96% 56%;
 
-  --border: 240 15% 15%;
-  --input: 240 15% 15%;
-  --ring: 352 80% 59%;
+  --border: 214 32% 91%;
+  --input: 214 32% 91%;
+  --ring: 224 76% 40%;
   --radius: 0.75rem;
-  --glass: 0 0% 100% / 0.06;
+  --glass: 0 0% 100% / 0.7;
 
-  --sidebar-background: 240 25% 8%;
-  --sidebar-foreground: 240 10% 70%;
-  --sidebar-primary: 352 80% 59%;
+  --sidebar-background: 0 0% 100%;
+  --sidebar-foreground: 215 16% 47%;
+  --sidebar-primary: 224 76% 40%;
   --sidebar-primary-foreground: 0 0% 100%;
-  --sidebar-accent: 240 15% 15%;
-  --sidebar-accent-foreground: 240 10% 70%;
-  --sidebar-border: 240 15% 15%;
-  --sidebar-ring: 352 80% 59%;
+  --sidebar-accent: 210 40% 96%;
+  --sidebar-accent-foreground: 215 16% 47%;
+  --sidebar-border: 214 32% 91%;
+  --sidebar-ring: 224 76% 40%;
 
   font-family: 'Pretendard Variable', 'Pretendard', system-ui, -apple-system, sans-serif;
-  background: hsl(240 30% 4%);
-  color: hsl(240 10% 93%);
+  background: #f0f6ff;
+  color: hsl(222 47% 11%);
   min-height: 100vh;
 }
 
@@ -73,6 +73,7 @@
   background: hsl(var(--card));
   position: relative;
   overflow: hidden;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04), 0 1px 2px rgba(0, 0, 0, 0.06);
 }
 .knock-card::before {
   content: '';
@@ -90,32 +91,27 @@
   gap: 0.5rem;
   padding: 0.5rem 1rem;
   border-radius: 9999px;
-  border: 1px solid hsl(var(--primary) / 0.3);
+  border: 1px solid hsl(var(--primary) / 0.2);
   font-size: 0.875rem;
   font-weight: 600;
-  background: hsl(var(--primary) / 0.1);
+  background: hsl(var(--primary) / 0.06);
   color: hsl(var(--primary));
 }
 
 .glow-button {
   position: relative;
-  box-shadow: 0 0 20px hsl(var(--primary) / 0.3);
-  animation: glow-pulse 2s ease-in-out infinite;
+  box-shadow: 0 4px 14px hsl(var(--primary) / 0.25);
+  transition: box-shadow 0.3s ease;
 }
-
-@keyframes glow-pulse {
-  0%, 100% {
-    box-shadow: 0 0 20px hsl(var(--primary) / 0.3);
-  }
-  50% {
-    box-shadow: 0 0 40px hsl(var(--primary) / 0.5), 0 0 60px hsl(var(--primary) / 0.2);
-  }
+.glow-button:hover {
+  box-shadow: 0 6px 20px hsl(var(--primary) / 0.35);
 }
 
 .glass-card {
   background: hsl(var(--glass));
   backdrop-filter: blur(12px);
   border: 1px solid hsl(var(--border));
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
 }
 
 .font-display {
@@ -123,8 +119,8 @@
 }
 
 .section-padding {
-  padding-top: 5rem;
-  padding-bottom: 5rem;
+  padding-top: 6rem;
+  padding-bottom: 6rem;
 }
 
 .content-max {
@@ -135,31 +131,30 @@
 
 /* ── PREMIUM UPGRADES ── */
 
-/* 1. Gradient text for headlines */
+/* 1. Gradient text for headlines — Navy to Blue */
 .gradient-text {
-  background: linear-gradient(135deg, hsl(var(--primary)) 0%, hsl(var(--accent)) 50%, hsl(352 80% 70%) 100%);
+  background: linear-gradient(135deg, hsl(var(--primary)) 0%, hsl(var(--accent)) 100%);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
 }
 
 .gradient-text-gold {
-  background: linear-gradient(135deg, #FFD700, #FFA500, #FF6B6B);
+  background: linear-gradient(135deg, hsl(var(--primary)), #0ea5e9);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
 }
 
-/* 2. Glassmorphism enhanced card */
+/* 2. Premium card with subtle shadow */
 .knock-card-glass {
   border-radius: 20px;
-  border: 1px solid hsl(var(--border) / 0.6);
-  background: hsl(var(--card) / 0.6);
-  backdrop-filter: blur(20px) saturate(1.4);
-  -webkit-backdrop-filter: blur(20px) saturate(1.4);
+  border: 1px solid hsl(var(--border));
+  background: hsl(var(--card));
   position: relative;
   overflow: hidden;
-  transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04), 0 1px 2px rgba(0, 0, 0, 0.06);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 .knock-card-glass::before {
   content: '';
@@ -168,11 +163,11 @@
   left: 0;
   right: 0;
   height: 1px;
-  background: linear-gradient(90deg, transparent, hsl(var(--primary) / 0.5), hsl(var(--accent) / 0.5), transparent);
+  background: linear-gradient(90deg, transparent, hsl(var(--primary) / 0.3), hsl(var(--accent) / 0.3), transparent);
 }
 .knock-card-glass:hover {
-  border-color: hsl(var(--primary) / 0.3);
-  box-shadow: 0 8px 40px hsl(var(--primary) / 0.08), 0 0 0 1px hsl(var(--primary) / 0.05);
+  border-color: hsl(var(--primary) / 0.25);
+  box-shadow: 0 10px 40px rgba(30, 64, 175, 0.08), 0 4px 12px rgba(0, 0, 0, 0.04);
   transform: translateY(-2px);
 }
 
@@ -182,53 +177,29 @@
   height: 1px;
   margin: 0 auto;
   max-width: 600px;
-  background: linear-gradient(90deg, transparent, hsl(var(--primary) / 0.3), hsl(var(--accent) / 0.3), transparent);
-}
-.section-divider::after {
-  content: '';
-  position: absolute;
-  top: -6px;
-  left: 50%;
-  transform: translateX(-50%);
-  width: 80px;
-  height: 12px;
-  background: radial-gradient(ellipse, hsl(var(--primary) / 0.2), transparent);
-  filter: blur(4px);
+  background: linear-gradient(90deg, transparent, hsl(var(--border)), transparent);
 }
 
-/* 4. Gold gradient CTA button */
+/* 4. Primary CTA button with hover shadow */
 .glow-button-gold {
   position: relative;
-  background: linear-gradient(135deg, hsl(var(--primary)), hsl(352 80% 50%), hsl(var(--primary))) !important;
-  background-size: 200% 200% !important;
-  animation: gold-shift 3s ease-in-out infinite, glow-pulse 2s ease-in-out infinite;
+  background: linear-gradient(135deg, hsl(var(--primary)), hsl(224 76% 48%)) !important;
   border: none;
+  box-shadow: 0 4px 14px hsl(var(--primary) / 0.3);
+  transition: all 0.3s ease;
 }
-@keyframes gold-shift {
-  0%, 100% { background-position: 0% 50%; }
-  50% { background-position: 100% 50%; }
+.glow-button-gold:hover {
+  box-shadow: 0 6px 24px hsl(var(--primary) / 0.4);
+  transform: translateY(-1px);
 }
 
-/* 5. Hover glow effect on cards */
+/* 5. Hover effect on cards */
 .knock-card-glow {
   position: relative;
   overflow: hidden;
 }
-.knock-card-glow::after {
-  content: '';
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  width: 200%;
-  height: 200%;
-  transform: translate(-50%, -50%);
-  background: radial-gradient(circle, hsl(var(--primary) / 0.06) 0%, transparent 70%);
-  opacity: 0;
-  transition: opacity 0.5s ease;
-  pointer-events: none;
-}
-.knock-card-glow:hover::after {
-  opacity: 1;
+.knock-card-glow:hover {
+  box-shadow: 0 10px 40px rgba(30, 64, 175, 0.08);
 }
 
 /* 6. Premium letter spacing for titles */
@@ -250,7 +221,6 @@
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
-  filter: drop-shadow(0 0 20px hsl(var(--primary) / 0.3));
 }
 
 /* 8. Premium FAQ accordion with left accent */
@@ -260,55 +230,23 @@
 }
 .faq-premium:hover {
   border-left-color: hsl(var(--primary));
-  background: hsl(var(--card) / 0.8);
+  background: hsl(210 40% 98%);
 }
 .faq-premium[data-state="open"] {
   border-left-color: hsl(var(--accent));
-  background: hsl(var(--card) / 0.9);
+  background: hsl(210 40% 98%);
 }
 
-/* 9. Aurora background for CTA section */
+/* 9. Subtle gradient background for CTA section */
 .aurora-bg {
   position: relative;
   overflow: hidden;
-}
-.aurora-bg::before {
-  content: '';
-  position: absolute;
-  top: -50%;
-  left: -50%;
-  width: 200%;
-  height: 200%;
-  background: conic-gradient(
-    from 0deg at 50% 50%,
-    transparent 0deg,
-    hsl(var(--primary) / 0.08) 60deg,
-    transparent 120deg,
-    hsl(var(--accent) / 0.06) 180deg,
-    transparent 240deg,
-    hsl(352 80% 60% / 0.05) 300deg,
-    transparent 360deg
-  );
-  animation: aurora-rotate 20s linear infinite;
-  pointer-events: none;
-}
-@keyframes aurora-rotate {
-  from { transform: rotate(0deg); }
-  to { transform: rotate(360deg); }
+  background: linear-gradient(135deg, hsl(224 76% 97%), hsl(210 40% 96%), hsl(224 76% 97%));
 }
 
-/* 10. Subtle grain texture overlay for premium feel */
+/* 10. Remove grain texture - clean look for hospital */
 .premium-grain::after {
-  content: '';
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  opacity: 0.015;
-  pointer-events: none;
-  z-index: 9999;
-  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  display: none;
 }
 
 /* Enhanced knock-badge — premium version */
@@ -318,39 +256,23 @@
   gap: 0.5rem;
   padding: 0.5rem 1.25rem;
   border-radius: 9999px;
-  border: 1px solid hsl(var(--primary) / 0.25);
+  border: 1px solid hsl(var(--primary) / 0.15);
   font-size: 0.8rem;
   font-weight: 600;
-  background: linear-gradient(135deg, hsl(var(--primary) / 0.12), hsl(var(--accent) / 0.08));
+  background: hsl(var(--primary) / 0.06);
   color: hsl(var(--primary));
-  letter-spacing: 0.12em;
-  text-transform: uppercase;
-  backdrop-filter: blur(8px);
+  letter-spacing: 0.06em;
 }
 
-/* Stat card shimmer effect on hover */
+/* Stat card hover effect */
 .stat-card {
   position: relative;
   overflow: hidden;
+  transition: all 0.3s ease;
 }
-.stat-card::before {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: -100%;
-  width: 100%;
-  height: 100%;
-  background: linear-gradient(90deg, transparent, hsl(0 0% 100% / 0.03), transparent);
-  transition: left 0.8s ease;
-}
-.stat-card:hover::before {
-  left: 100%;
-}
-
-/* Floating particle dots */
-@keyframes float-particle {
-  0%, 100% { transform: translateY(0) scale(1); opacity: 0.3; }
-  50% { transform: translateY(-20px) scale(1.2); opacity: 0.6; }
+.stat-card:hover {
+  box-shadow: 0 10px 40px rgba(30, 64, 175, 0.08);
+  transform: translateY(-2px);
 }
 
 /* Smooth section transitions */
@@ -370,21 +292,21 @@
     width: 120px;
     height: 120px;
     opacity: 0;
-    border-color: hsla(352, 80%, 59%, 0);
+    border-color: hsla(224, 76%, 40%, 0);
   }
 }
 
 @keyframes knob-glow {
   0%, 100% {
     box-shadow:
-      0 0 15px hsla(352, 80%, 59%, 0.2),
-      0 0 30px hsla(352, 80%, 59%, 0.1),
+      0 0 15px hsla(224, 76%, 40%, 0.15),
+      0 0 30px hsla(224, 76%, 40%, 0.08),
       inset 0 1px 2px hsla(0, 0%, 100%, 0.15);
   }
   50% {
     box-shadow:
-      0 0 25px hsla(352, 80%, 59%, 0.4),
-      0 0 50px hsla(352, 80%, 59%, 0.15),
+      0 0 25px hsla(224, 76%, 40%, 0.25),
+      0 0 50px hsla(224, 76%, 40%, 0.1),
       inset 0 1px 2px hsla(0, 0%, 100%, 0.2);
   }
 }
@@ -392,4 +314,25 @@
 @keyframes door-light-pulse {
   0%, 100% { opacity: 0.6; }
   50% { opacity: 1; }
+}
+
+@keyframes glow-pulse {
+  0%, 100% {
+    box-shadow: 0 4px 14px hsl(224 76% 40% / 0.2);
+  }
+  50% {
+    box-shadow: 0 6px 20px hsl(224 76% 40% / 0.35);
+  }
+}
+
+/* ── Knocking hand animation ── */
+@keyframes hand-knock {
+  0%   { transform: translate(-50%, -50%) rotate(-15deg) scale(1); }
+  8%   { transform: translate(-50%, -50%) rotate(-5deg) scale(1.05) translateX(6px); }
+  14%  { transform: translate(-50%, -50%) rotate(-15deg) scale(1); }
+  22%  { transform: translate(-50%, -50%) rotate(-5deg) scale(1.05) translateX(6px); }
+  28%  { transform: translate(-50%, -50%) rotate(-15deg) scale(1); }
+  36%  { transform: translate(-50%, -50%) rotate(-5deg) scale(1.05) translateX(6px); }
+  42%  { transform: translate(-50%, -50%) rotate(-15deg) scale(1); }
+  100% { transform: translate(-50%, -50%) rotate(-15deg) scale(1); }
 }

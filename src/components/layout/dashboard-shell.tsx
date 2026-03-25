@@ -8,6 +8,7 @@ interface DashboardShellProps {
   children: ReactNode;
   actions?: ReactNode;
   showSessionActions?: boolean;
+  hideNav?: boolean;
 }
 
 export function DashboardShell({
@@ -16,10 +17,11 @@ export function DashboardShell({
   children,
   actions,
   showSessionActions = true,
+  hideNav = false,
 }: DashboardShellProps) {
   return (
     <div className="dashboard-shell">
-      <GlobalNav />
+      {!hideNav && <GlobalNav />}
 
       <header className="dashboard-topbar">
         <div>

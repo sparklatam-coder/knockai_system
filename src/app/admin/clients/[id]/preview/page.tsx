@@ -13,6 +13,7 @@ export default async function AdminClientPreviewPage({ params }: Props) {
   return (
     <ProtectedRoute requireAdmin>
       <DashboardShell
+        hideNav
         title="고객 대시보드 미리보기"
         description="고객이 실제로 보게 되는 대시보드입니다. 공개 설정된 로그만 표시됩니다."
         actions={
