@@ -157,16 +157,16 @@ export default function PlacePage() {
 
             <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
               {[
-                { icon: Search, step: "01", title: "키워드 전략 설계", desc: "업종·지역 맞춤 핵심 키워드를 분석하고 상위노출 전략을 수립합니다." },
-                { icon: Camera, step: "02", title: "전문 사진·영상 촬영", desc: "클릭을 유도하는 고퀄리티 매장 사진과 영상을 촬영합니다." },
-                { icon: MapPin, step: "03", title: "플레이스 상세 최적화", desc: "메뉴, 가격, 영업시간, 편의시설 등 모든 정보를 최적화합니다." },
-                { icon: Star, step: "04", title: "리뷰 관리 전략", desc: "자연스러운 리뷰 유도와 부정 리뷰 대응 전략을 세웁니다." },
-                { icon: MessageSquare, step: "05", title: "네이버 예약 연동", desc: "네이버 예약 시스템을 연동해 즉시 전환 구조를 만듭니다." },
-                { icon: TrendingUp, step: "06", title: "순위 모니터링·리포트", desc: "매주 순위 변동을 추적하고 성과 리포트를 제공합니다." },
+                { icon: Search, step: "1", title: "키워드 전략 설계", desc: "업종·지역 맞춤 핵심 키워드를 분석하고 상위노출 전략을 수립합니다." },
+                { icon: Camera, step: "2", title: "전문 사진·영상 촬영", desc: "클릭을 유도하는 고퀄리티 매장 사진과 영상을 촬영합니다." },
+                { icon: MapPin, step: "3", title: "플레이스 상세 최적화", desc: "메뉴, 가격, 영업시간, 편의시설 등 모든 정보를 최적화합니다." },
+                { icon: Star, step: "4", title: "리뷰 관리 전략", desc: "자연스러운 리뷰 유도와 부정 리뷰 대응 전략을 세웁니다." },
+                { icon: MessageSquare, step: "5", title: "네이버 예약 연동", desc: "네이버 예약 시스템을 연동해 즉시 전환 구조를 만듭니다." },
+                { icon: TrendingUp, step: "6", title: "순위 모니터링·리포트", desc: "매주 순위 변동을 추적하고 성과 리포트를 제공합니다." },
               ].map((item, i) => (
                 <AnimatedSection key={i} delay={i * 0.08}>
                   <div className="knock-card p-6 h-full hover:border-primary/40 transition-all hover:-translate-y-1 relative">
-                    <div className="absolute -top-3 -left-3 w-8 h-8 rounded-full bg-primary flex items-center justify-center text-primary-foreground text-xs font-bold">
+                    <div className="absolute -top-3 -left-3 w-7 h-7 rounded-full bg-primary flex items-center justify-center text-primary-foreground text-xs font-bold">
                       {item.step}
                     </div>
                     <div className="pt-2">
