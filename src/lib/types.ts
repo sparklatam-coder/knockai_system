@@ -10,7 +10,7 @@ export type ActionType =
 
 export type LogType = "memo" | "work";
 
-export type AuthRole = "admin" | "client" | "guest";
+export type AuthRole = "super_admin" | "admin" | "client" | "guest";
 
 export type NodeGroup = "pipeline" | "cs360";
 
@@ -44,6 +44,7 @@ export interface Client {
   package_tier: PackageTier;
   contract_start: string | null;
   auth_user_id: string | null;
+  logo_url: string | null;
   memo: string | null;
   created_at: string;
   updated_at: string;
@@ -58,6 +59,11 @@ export interface NodeRecord {
   updated_by: string | null;
 }
 
+export interface GuideLink {
+  label: string;
+  url: string;
+}
+
 export interface SubNode {
   id: string;
   client_id: string;
@@ -66,6 +72,8 @@ export interface SubNode {
   is_done: boolean;
   done_at: string | null;
   sort_order: number;
+  guide_content: string | null;
+  guide_links: GuideLink[];
 }
 
 export interface ActivityLog {

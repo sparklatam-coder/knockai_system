@@ -35,6 +35,10 @@ const AuthContext = createContext<AuthContextValue | null>(null);
 function resolveRole(user: User | null): AuthRole {
   const rawRole = user?.user_metadata?.role;
 
+  if (rawRole === "super_admin") {
+    return "super_admin";
+  }
+
   if (rawRole === "admin") {
     return "admin";
   }

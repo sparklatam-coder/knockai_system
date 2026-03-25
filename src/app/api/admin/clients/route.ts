@@ -114,11 +114,26 @@ export async function POST(request: Request) {
   const { adminClient } = adminContext;
 
   let payload: RawClientInput;
+  let logoFile: File | null = null;
 
-  try {
-    payload = (await request.json()) as RawClientInput;
-  } catch {
-    return badRequest("잘못된 요청 본문입니다.");
+  const contentType = request.headers.get("content-type") ?? "";
+
+  if (contentType.includes("multipart/form-data")) {
+    const formData = await request.formData();
+    const rawJson = formData.get("data") as string | null;
+    logoFile = formData.get("logo") as File | null;
+
+    try {
+      payload = rawJson ? (JSON.parse(rawJson) as RawClientInput) : {};
+    } catch {
+      return badRequest("잘못된 요청 본문입니다.");
+    }
+  } else {
+    try {
+      payload = (await request.json()) as RawClientInput;
+    } catch {
+      return badRequest("잘못된 요청 본문입니다.");
+    }
   }
 
   const input = normalizeInput(payload);
@@ -127,13 +142,25 @@ export async function POST(request: Request) {
     return badRequest("병원명은 필수입니다.");
   }
 
+  if (logoFile) {
+    if (!logoFile.type.startsWith("image/")) {
+      return badRequest("로고는 이미지 파일만 가능합니다.");
+    }
+
+    if (logoFile.size > 2 * 1024 * 1024) {
+      return badRequest("로고 파일은 2MB 이하만 가능합니다.");
+    }
+  }
+
   let authUserId: string | null = null;
 
   if (input.login_email) {
+    const siteOrigin = request.headers.get("origin") ?? process.env.NEXT_PUBLIC_SITE_URL ?? "";
     const inviteResult = await adminClient.auth.admin.inviteUserByEmail(input.login_email, {
       data: {
         role: "client",
       },
+      redirectTo: `${siteOrigin}/auth/callback`,
     });
 
     if (inviteResult.error) {
@@ -141,6 +168,32 @@ export async function POST(request: Request) {
     }
 
     authUserId = inviteResult.data.user?.id ?? null;
+  }
+
+  let logoUrl: string | null = null;
+
+  if (logoFile) {
+    const ext = logoFile.name.split(".").pop() ?? "png";
+    const fileName = `${Date.now()}_${Math.random().toString(36).slice(2, 8)}.${ext}`;
+    const arrayBuffer = await logoFile.arrayBuffer();
+
+    const { error: uploadError } = await adminClient.storage
+      .from("client-logos")
+      .upload(fileName, Buffer.from(arrayBuffer), {
+        contentType: logoFile.type,
+        cacheControl: "3600",
+        upsert: false,
+      });
+
+    if (uploadError) {
+      return NextResponse.json({ error: `로고 업로드 실패: ${uploadError.message}` }, { status: 500 });
+    }
+
+    const { data: urlData } = adminClient.storage
+      .from("client-logos")
+      .getPublicUrl(fileName);
+
+    logoUrl = urlData.publicUrl;
   }
 
   const { data: createdClient, error: createClientError } = await adminClient
@@ -154,6 +207,7 @@ export async function POST(request: Request) {
       package_tier: input.package_tier,
       contract_start: input.contract_start || null,
       auth_user_id: authUserId,
+      logo_url: logoUrl,
       memo: input.memo || null,
     })
     .select("*")

@@ -312,6 +312,8 @@ a {
   display: flex;
   flex-direction: column;
   justify-content: flex-start;
+  align-items: center;
+  text-align: center;
 }
 
 /* ── New compact pipeline flow ── */
@@ -1013,6 +1015,8 @@ a {
   display: flex;
   flex-direction: column;
   justify-content: flex-start;
+  align-items: center;
+  text-align: center;
 }
 
 .fw-wrap {

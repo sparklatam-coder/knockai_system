@@ -1,11 +1,11 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useCallback, useMemo, useRef, useState } from "react";
 import type { ClientCreateInput, PackageTier } from "@/lib/types";
 
 interface ClientCreateFormProps {
   creating: boolean;
-  onSubmit: (input: ClientCreateInput) => Promise<{ error: string | null }>;
+  onSubmit: (options: { input: ClientCreateInput; logo?: File | null }) => Promise<{ error: string | null }>;
 }
 
 const initialState: ClientCreateInput = {
@@ -22,15 +22,54 @@ const initialState: ClientCreateInput = {
 
 export function ClientCreateForm({ creating, onSubmit }: ClientCreateFormProps) {
   const [form, setForm] = useState<ClientCreateInput>(initialState);
+  const [logo, setLogo] = useState<File | null>(null);
+  const [logoPreview, setLogoPreview] = useState<string | null>(null);
   const [message, setMessage] = useState<string | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const packageOptions = useMemo<PackageTier[]>(() => ["basic", "standard", "premium"], []);
+
+  const handleLogoChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0] ?? null;
+
+    if (!file) {
+      setLogo(null);
+      setLogoPreview(null);
+      return;
+    }
+
+    if (!file.type.startsWith("image/")) {
+      setMessage("이미지 파일만 업로드할 수 있습니다.");
+      return;
+    }
+
+    if (file.size > 2 * 1024 * 1024) {
+      setMessage("로고 파일은 2MB 이하만 가능합니다.");
+      return;
+    }
+
+    setLogo(file);
+    const url = URL.createObjectURL(file);
+    setLogoPreview(url);
+    setMessage(null);
+  }, []);
+
+  const clearLogo = useCallback(() => {
+    setLogo(null);
+    if (logoPreview) {
+      URL.revokeObjectURL(logoPreview);
+    }
+    setLogoPreview(null);
+    if (fileInputRef.current) {
+      fileInputRef.current.value = "";
+    }
+  }, [logoPreview]);
 
   async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setMessage(null);
 
-    const result = await onSubmit(form);
+    const result = await onSubmit({ input: form, logo });
 
     if (result.error) {
       setMessage(result.error);
@@ -38,6 +77,7 @@ export function ClientCreateForm({ creating, onSubmit }: ClientCreateFormProps) 
     }
 
     setForm(initialState);
+    clearLogo();
     setMessage("고객이 생성되고 기본 노드가 초기화되었습니다.");
   }
 
@@ -49,6 +89,52 @@ export function ClientCreateForm({ creating, onSubmit }: ClientCreateFormProps) 
       </div>
 
       <form className="client-form" onSubmit={handleSubmit}>
+        {/* Logo upload */}
+        <div className="logo-upload-field">
+          <span className="logo-upload-label">병원 로고</span>
+          <div className="logo-upload-row">
+            <button
+              className="logo-upload-area"
+              onClick={() => fileInputRef.current?.click()}
+              type="button"
+            >
+              {logoPreview ? (
+                <img
+                  alt="로고 미리보기"
+                  className="logo-preview-img"
+                  src={logoPreview}
+                />
+              ) : (
+                <div className="logo-placeholder">
+                  <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+                    <rect x="3" y="3" width="18" height="18" rx="4" />
+                    <circle cx="8.5" cy="8.5" r="1.5" />
+                    <path d="m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21" />
+                  </svg>
+                  <span>로고 업로드</span>
+                </div>
+              )}
+            </button>
+            {logo && (
+              <button
+                className="logo-clear-btn"
+                onClick={clearLogo}
+                type="button"
+              >
+                삭제
+              </button>
+            )}
+          </div>
+          <input
+            accept="image/*"
+            hidden
+            onChange={handleLogoChange}
+            ref={fileInputRef}
+            type="file"
+          />
+          <span className="logo-upload-hint">PNG, JPG, SVG (2MB 이하)</span>
+        </div>
+
         <label>
           <span>병원명</span>
           <input

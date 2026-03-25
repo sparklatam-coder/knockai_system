@@ -88,13 +88,19 @@ ALTER TABLE sub_nodes ENABLE ROW LEVEL SECURITY;
 ALTER TABLE activity_logs ENABLE ROW LEVEL SECURITY;
 ALTER TABLE inquiries ENABLE ROW LEVEL SECURITY;
 
--- Helper function: check if current user is admin
+-- Helper function: check if current user is admin (includes super_admin)
 CREATE OR REPLACE FUNCTION is_admin()
 RETURNS BOOLEAN AS $$
 BEGIN
-  RETURN (
-    (auth.jwt() -> 'user_metadata' ->> 'role') = 'admin'
-  );
+  RETURN (auth.jwt() -> 'user_metadata' ->> 'role') IN ('admin', 'super_admin');
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
+
+-- Helper function: check if current user is super_admin
+CREATE OR REPLACE FUNCTION is_super_admin()
+RETURNS BOOLEAN AS $$
+BEGIN
+  RETURN (auth.jwt() -> 'user_metadata' ->> 'role') = 'super_admin';
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
 

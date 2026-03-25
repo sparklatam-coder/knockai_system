@@ -22,12 +22,12 @@ export function SessionActions() {
   return (
     <div className="session-actions" style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12 }}>
       <div className="session-pill">
-        <span>{role === "admin" ? "관리자" : "고객"}</span>
+        <span>{role === "super_admin" ? "슈퍼관리자" : role === "admin" ? "관리자" : "고객"}</span>
         <strong>{user?.email}</strong>
       </div>
 
       <div style={{ display: "flex", alignItems: "center", gap: 8, marginLeft: "auto" }}>
-        {role === "admin" && (
+        {(role === "admin" || role === "super_admin") && (
           <button
             type="button"
             onClick={() => router.push(isAdminPage ? "/dashboard" : "/admin/clients")}

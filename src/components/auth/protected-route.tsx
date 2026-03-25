@@ -28,7 +28,8 @@ export function ProtectedRoute({
       return;
     }
 
-    if (requireAdmin && role !== "admin") {
+    const isAdminRole = role === "admin" || role === "super_admin";
+    if (requireAdmin && !isAdminRole) {
       router.replace("/dashboard");
     }
   }, [configured, isAuthenticated, loading, pathname, requireAdmin, role, router]);
@@ -45,7 +46,8 @@ export function ProtectedRoute({
     );
   }
 
-  if (loading || !isAuthenticated || (requireAdmin && role !== "admin")) {
+  const isAdminRole2 = role === "admin" || role === "super_admin";
+  if (loading || !isAuthenticated || (requireAdmin && !isAdminRole2)) {
     return (
       <div className="state-card">
         <h2>인증 상태를 확인하는 중입니다</h2>

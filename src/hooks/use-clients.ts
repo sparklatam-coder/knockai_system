@@ -4,12 +4,17 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { useAuth } from "@/hooks/use-auth";
 import type { ClientCreateInput, ClientListItem } from "@/lib/types";
 
+interface CreateClientOptions {
+  input: ClientCreateInput;
+  logo?: File | null;
+}
+
 interface UseClientsResult {
   clients: ClientListItem[];
   loading: boolean;
   error: string | null;
   creating: boolean;
-  createClient: (input: ClientCreateInput) => Promise<{ error: string | null }>;
+  createClient: (options: CreateClientOptions) => Promise<{ error: string | null }>;
   refresh: () => Promise<void>;
 }
 
@@ -35,7 +40,7 @@ export function useClients(): UseClientsResult {
   const accessToken = session?.access_token ?? null;
 
   const refresh = useCallback(async () => {
-    if (!configured || !isAuthenticated || role !== "admin" || !accessToken) {
+    if (!configured || !isAuthenticated || (role !== "admin" && role !== "super_admin") || !accessToken) {
       setClients([]);
       setLoading(false);
       return;
@@ -68,7 +73,7 @@ export function useClients(): UseClientsResult {
   }, [refresh]);
 
   const createClient = useCallback(
-    async (input: ClientCreateInput) => {
+    async ({ input, logo }: CreateClientOptions) => {
       if (!accessToken) {
         return { error: "세션이 없습니다." };
       }
@@ -76,14 +81,30 @@ export function useClients(): UseClientsResult {
       setCreating(true);
       setError(null);
 
-      const response = await fetch("/api/admin/clients", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${accessToken}`,
-        },
-        body: JSON.stringify(input),
-      });
+      let response: Response;
+
+      if (logo) {
+        const formData = new FormData();
+        formData.append("data", JSON.stringify(input));
+        formData.append("logo", logo);
+
+        response = await fetch("/api/admin/clients", {
+          method: "POST",
+          headers: {
+            Authorization: `Bearer ${accessToken}`,
+          },
+          body: formData,
+        });
+      } else {
+        response = await fetch("/api/admin/clients", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${accessToken}`,
+          },
+          body: JSON.stringify(input),
+        });
+      }
 
       const result = await parseApiResponse<ClientListItem>(response);
 

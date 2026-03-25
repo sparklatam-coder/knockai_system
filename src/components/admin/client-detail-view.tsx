@@ -6,7 +6,8 @@ import { NODE_META, LEAD_NURTURE_SPLIT } from "@/lib/constants";
 import { useClientDetail } from "@/hooks/use-client-detail";
 import { useAuth } from "@/hooks/use-auth";
 import { HospitalLoadingScreen } from "@/components/HospitalLoadingScreen";
-import type { ActivityLog, LogType, NodeKey, NodeRecord, NodeStatus, SubNode } from "@/lib/types";
+import type { ActivityLog, AuthRole, GuideLink, LogType, NodeKey, NodeRecord, NodeStatus, SubNode } from "@/lib/types";
+import { GuidePanel } from "@/components/admin/guide-panel";
 
 /* ── constants ──────────────────────────────────────── */
 const STATUS_OPTIONS: { value: NodeStatus; label: string; color: string; bg: string }[] = [
@@ -146,11 +147,12 @@ function renderWithLinks(text: string) {
 
 /* ── log item: view / edit ──────────────────────────── */
 function LogItem({
-  log, saving,
+  log, saving, readOnly,
   onUpdate, onDelete,
 }: {
   log: ActivityLog;
   saving: boolean;
+  readOnly?: boolean;
   onUpdate: (id: string, content: string) => Promise<void>;
   onDelete: (id: string) => Promise<void>;
 }) {
@@ -180,7 +182,7 @@ function LogItem({
           {new Date(log.created_at).toLocaleDateString("ko-KR", { month: "short", day: "numeric" })}
         </span>
 
-        {!editing && (
+        {!editing && !readOnly && (
           <>
             <button type="button" onClick={() => { setDraft(log.content); setEditing(true); }}
               style={{ fontSize: 11, color: "var(--tsub)", background: "none", cursor: "pointer", padding: "2px 6px", borderRadius: 6, border: "1px solid var(--border)" }}>
@@ -447,8 +449,10 @@ function NodeCard({
   createLog,
   updateLog,
   deleteLog,
+  onUpdateGuide,
   clientId,
   accessToken,
+  role,
 }: {
   node: NodeRecord;
   subNodes: SubNode[];
@@ -462,9 +466,12 @@ function NodeCard({
   createLog: (input: { node_key: string; log_type: LogType; content: string; image_urls?: string[] }) => Promise<{ error: string | null }>;
   updateLog: (logId: string, content: string) => Promise<{ error: string | null }>;
   deleteLog: (logId: string) => Promise<{ error: string | null }>;
+  onUpdateGuide: (subNodeId: string, content: string | null, links: GuideLink[]) => Promise<{ error: string | null }>;
   clientId: string;
   accessToken: string;
+  role: AuthRole;
 }) {
+  const isClient = role === "client";
   // Effective status (global pending override or server)
   const pendingNodeStatus = pendingChanges.nodes[node.node_key]?.status;
   const effectiveStatus = pendingNodeStatus ?? node.status;
@@ -506,8 +513,8 @@ function NodeCard({
         </span>
       </div>
 
-      {/* Status selector */}
-      {showStatusControl && (
+      {/* Status selector — hidden for client */}
+      {showStatusControl && !isClient && (
         <div className="apple-section">
           <p className="apple-section-label">상태 변경</p>
           <SegControl
@@ -541,6 +548,7 @@ function NodeCard({
                   <label className="apple-checkbox-label">
                     <input type="checkbox" className="apple-checkbox"
                       checked={sn.is_done}
+                      disabled={isClient}
                       onChange={(e) => onTaskToggle(sn.id, e.target.checked)} />
                     <span style={{
                       color: sn.is_done ? "var(--tdim)" : "var(--text)",
@@ -551,6 +559,13 @@ function NodeCard({
                       {sn.label}
                     </span>
                   </label>
+                  <GuidePanel
+                    subNodeId={sn.id}
+                    guideContent={sn.guide_content}
+                    guideLinks={sn.guide_links ?? []}
+                    role={role}
+                    onSave={onUpdateGuide}
+                  />
                 </div>
               </li>
             ))}
@@ -571,6 +586,7 @@ function NodeCard({
                 key={log.id}
                 log={log}
                 saving={globalSaving}
+                readOnly={isClient}
                 onUpdate={async (id, content) => { await updateLog(id, content); }}
                 onDelete={async (id) => { await deleteLog(id); }}
               />
@@ -579,25 +595,27 @@ function NodeCard({
         </div>
       )}
 
-      {/* Quick log composer */}
-      <div className="apple-section apple-log-form">
-        {nodeLogs.length === 0 && <p className="apple-section-label">활동 기록</p>}
-        <LogComposer
-          nodeKey={node.node_key}
-          saving={globalSaving}
-          onCreate={createLog}
-          clientId={clientId}
-          accessToken={accessToken}
-        />
-      </div>
+      {/* Quick log composer — hidden for client */}
+      {!isClient && (
+        <div className="apple-section apple-log-form">
+          {nodeLogs.length === 0 && <p className="apple-section-label">활동 기록</p>}
+          <LogComposer
+            nodeKey={node.node_key}
+            saving={globalSaving}
+            onCreate={createLog}
+            clientId={clientId}
+            accessToken={accessToken}
+          />
+        </div>
+      )}
     </article>
   );
 }
 
 /* ── main component ─────────────────────────────────── */
 export function ClientDetailView({ clientId }: { clientId: string }) {
-  const { session } = useAuth();
-  const { data, error, loading, saving, refresh, toggleSubNode, updateNodeStatus, createLog, updateLog, deleteLog } =
+  const { session, role } = useAuth();
+  const { data, error, loading, saving, refresh, toggleSubNode, updateNodeStatus, createLog, updateLog, deleteLog, updateGuide } =
     useClientDetail(clientId);
 
   // ── Global pending changes ──
@@ -804,8 +822,10 @@ export function ClientDetailView({ clientId }: { clientId: string }) {
                   createLog={createLog}
                   updateLog={updateLog}
                   deleteLog={deleteLog}
+                  onUpdateGuide={updateGuide}
                   clientId={clientId}
                   accessToken={accessToken}
+                  role={role}
                 />
               );
             });
@@ -828,15 +848,17 @@ export function ClientDetailView({ clientId }: { clientId: string }) {
               createLog={createLog}
               updateLog={updateLog}
               deleteLog={deleteLog}
+              onUpdateGuide={updateGuide}
               clientId={clientId}
               accessToken={accessToken}
+              role={role}
             />
           )];
         })}
       </section>
 
-      {/* ── Global floating save toast ── */}
-      {(hasChanges || saveSuccess) && (
+      {/* ── Global floating save toast — hidden for client ── */}
+      {role !== "client" && (hasChanges || saveSuccess) && (
         <GlobalSaveToast
           count={changeCount}
           onSave={() => void handleGlobalSave()}

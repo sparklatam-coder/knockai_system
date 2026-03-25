@@ -148,7 +148,7 @@ export const PACKAGE_INFO: Record<PackageTier, {
   basic: {
     label: "Basic",
     price: "100~150만원/월",
-    description: "플레이스 + 블로그/카페 확장 + SNS",
+    description: "네이버 플레이스 1~5위",
     guarantee: "3개월 내 5위 이내 개런티 (미달성 시 달성까지 무료 연장)",
     color: "#2196F3",
     priceNote: "키워드 유입량·경쟁 강도에 따라 변동될 수 있습니다.\n정확한 견적은 상담을 통해 안내드립니다.",
@@ -183,15 +183,13 @@ export const PACKAGE_NODE_ACCESS: Record<PackageTier, string[]> = {
   ],
   basic: [
     "awareness",
-    "lead_capture",
     "cs_analytics",
   ],
   standard: [
     "awareness",
     "lead_capture",
     "lead_nurture",
-    "cs_support",
-    "cs_community",
+    "new_patient",
     "cs_analytics",
   ],
   premium: [

@@ -75,10 +75,6 @@ export function LoginForm() {
         </button>
       </form>
 
-      <div className="auth-links">
-        <Link href="/">홈으로</Link>
-        <Link href="/admin/clients">관리자 화면</Link>
-      </div>
     </section>
   );
 }

@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useAuth } from "@/hooks/use-auth";
-import type { ClientDashboardData, LogType, NodeStatus } from "@/lib/types";
+import type { ClientDashboardData, GuideLink, LogType, NodeStatus } from "@/lib/types";
 
 interface CreateLogInput {
   node_key: string;
@@ -20,7 +20,7 @@ export function useClientDetail(clientId: string) {
   const [saving, setSaving] = useState(false);
 
   const refresh = useCallback(async () => {
-    if (!configured || !isAuthenticated || role !== "admin" || !session?.access_token) {
+    if (!configured || !isAuthenticated || (role !== "admin" && role !== "super_admin") || !session?.access_token) {
       setData(null);
       setLoading(false);
       return;
@@ -182,6 +182,22 @@ export function useClientDetail(clientId: string) {
     [clientId, refresh, session?.access_token],
   );
 
+  const updateGuide = useCallback(
+    async (subNodeId: string, guideContent: string | null, guideLinks: GuideLink[]) => {
+      if (!session?.access_token) return { error: "세션이 없습니다." };
+      const response = await fetch(`/api/admin/clients/${clientId}/nodes`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${session.access_token}` },
+        body: JSON.stringify({ kind: "guide_update", sub_node_id: subNodeId, guide_content: guideContent, guide_links: guideLinks }),
+      });
+      const json = (await response.json()) as { error?: string };
+      if (!response.ok) return { error: json.error ?? "가이드 저장에 실패했습니다." };
+      await refresh();
+      return { error: null };
+    },
+    [clientId, refresh, session?.access_token],
+  );
+
   return useMemo(
     () => ({
       data,
@@ -194,7 +210,8 @@ export function useClientDetail(clientId: string) {
       createLog,
       updateLog,
       deleteLog,
+      updateGuide,
     }),
-    [createLog, data, deleteLog, error, loading, refresh, saving, toggleSubNode, updateLog, updateNodeStatus],
+    [createLog, data, deleteLog, error, loading, refresh, saving, toggleSubNode, updateLog, updateGuide, updateNodeStatus],
   );
 }

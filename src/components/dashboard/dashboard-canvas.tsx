@@ -1170,9 +1170,11 @@ function PackageComparisonTable({ currentTier }: { currentTier: PackageTier }) {
                       e.currentTarget.style.boxShadow = isPopular ? `0 4px 16px ${info.color}40` : "none";
                     }}
                     onClick={() => {
-                      const firstLocked = ALL_NODE_KEYS.find((k) => !PACKAGE_NODE_ACCESS[currentTier].includes(k));
-                      if (firstLocked) {
-                        window.dispatchEvent(new CustomEvent("upgrade-inquiry", { detail: { nodeKey: firstLocked } }));
+                      const currentNodes = new Set(PACKAGE_NODE_ACCESS[currentTier]);
+                      const tierNodes = PACKAGE_NODE_ACCESS[tier];
+                      const firstNew = tierNodes.find((k) => !currentNodes.has(k));
+                      if (firstNew) {
+                        window.dispatchEvent(new CustomEvent("upgrade-inquiry", { detail: { nodeKey: firstNew } }));
                       }
                     }}
                   >

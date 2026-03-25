@@ -20,7 +20,14 @@ interface SubNodeTogglePayload {
   is_done: boolean;
 }
 
-type RequestPayload = NodeStatusUpdatePayload | SubNodeTogglePayload;
+interface GuideUpdatePayload {
+  kind: "guide_update";
+  sub_node_id: string;
+  guide_content: string | null;
+  guide_links: { label: string; url: string }[];
+}
+
+type RequestPayload = NodeStatusUpdatePayload | SubNodeTogglePayload | GuideUpdatePayload;
 
 export async function PATCH(request: Request, context: RouteContext) {
   const adminContext = await getAdminRequestContext(
@@ -64,6 +71,30 @@ export async function PATCH(request: Request, context: RouteContext) {
     }
 
     return NextResponse.json({ data });
+  }
+
+  if (payload.kind === "guide_update") {
+    if (user.user_metadata?.role !== "super_admin") {
+      return NextResponse.json({ error: "가이드 수정은 슈퍼관리자만 가능합니다." }, { status: 403 });
+    }
+
+    const links = Array.isArray(payload.guide_links) ? payload.guide_links : [];
+    const { data: guideData, error: guideError } = await adminClient
+      .from("sub_nodes")
+      .update({
+        guide_content: payload.guide_content?.trim() || null,
+        guide_links: links,
+      })
+      .eq("id", payload.sub_node_id)
+      .eq("client_id", id)
+      .select("*")
+      .single();
+
+    if (guideError) {
+      return NextResponse.json({ error: guideError.message }, { status: 500 });
+    }
+
+    return NextResponse.json({ data: guideData });
   }
 
   const { data, error } = await adminClient

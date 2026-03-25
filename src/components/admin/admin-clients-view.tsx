@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useCallback, useMemo, useRef, useState } from "react";
 import { ClientCard } from "@/components/admin/client-card";
 import { useClients } from "@/hooks/use-clients";
 import type { ClientCreateInput, PackageTier } from "@/lib/types";
@@ -26,7 +26,10 @@ export function AdminClientsView() {
   const [selectedTier, setSelectedTier] = useState("all");
   const [showModal,    setShowModal]    = useState(false);
   const [form,         setForm]         = useState<ClientCreateInput>(INITIAL);
+  const [logo,         setLogo]         = useState<File | null>(null);
+  const [logoPreview,  setLogoPreview]  = useState<string | null>(null);
   const [formMsg,      setFormMsg]      = useState<string | null>(null);
+  const logoInputRef = useRef<HTMLInputElement>(null);
 
   const filtered = useMemo(() => clients.filter((c) => {
     const q = search.toLowerCase();
@@ -40,12 +43,30 @@ export function AdminClientsView() {
       setForm((prev) => ({ ...prev, [key]: e.target.value }));
   }
 
+  const handleLogoChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0] ?? null;
+    if (!file) { setLogo(null); setLogoPreview(null); return; }
+    if (!file.type.startsWith("image/")) { setFormMsg("이미지 파일만 업로드 가능합니다."); return; }
+    if (file.size > 2 * 1024 * 1024) { setFormMsg("로고는 2MB 이하만 가능합니다."); return; }
+    setLogo(file);
+    setLogoPreview(URL.createObjectURL(file));
+    setFormMsg(null);
+  }, []);
+
+  const clearLogo = useCallback(() => {
+    setLogo(null);
+    if (logoPreview) URL.revokeObjectURL(logoPreview);
+    setLogoPreview(null);
+    if (logoInputRef.current) logoInputRef.current.value = "";
+  }, [logoPreview]);
+
   async function handleCreate(e: React.FormEvent) {
     e.preventDefault();
     setFormMsg(null);
-    const result = await createClient(form);
+    const result = await createClient({ input: form, logo });
     if (result.error) { setFormMsg(result.error); return; }
     setForm(INITIAL);
+    clearLogo();
     setFormMsg("✓ 고객이 생성되었습니다.");
     setTimeout(() => { setShowModal(false); setFormMsg(null); }, 1200);
   }
@@ -135,6 +156,46 @@ export function AdminClientsView() {
             </p>
 
             <form onSubmit={handleCreate} style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+
+              {/* Logo upload */}
+              <div style={{ display: "flex", alignItems: "center", gap: 14, marginBottom: 4 }}>
+                <button
+                  type="button"
+                  onClick={() => logoInputRef.current?.click()}
+                  style={{
+                    width: 72, height: 72, borderRadius: 16, cursor: "pointer",
+                    background: logoPreview ? "transparent" : "var(--overlay-3)",
+                    border: logoPreview ? "2px solid var(--accent-border)" : "2px dashed var(--border)",
+                    display: "flex", alignItems: "center", justifyContent: "center",
+                    overflow: "hidden", flexShrink: 0, transition: "border-color 0.2s",
+                  }}
+                >
+                  {logoPreview ? (
+                    <img src={logoPreview} alt="로고" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+                  ) : (
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="var(--tdim)" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+                      <rect x="3" y="3" width="18" height="18" rx="4" />
+                      <circle cx="8.5" cy="8.5" r="1.5" />
+                      <path d="m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21" />
+                    </svg>
+                  )}
+                </button>
+                <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
+                  <span style={{ fontSize: 11, fontWeight: 700, letterSpacing: "0.6px", textTransform: "uppercase", color: "var(--tdim)" }}>
+                    병원 로고
+                  </span>
+                  <span style={{ fontSize: 12, color: "var(--tsub)" }}>PNG, JPG, SVG · 2MB 이하</span>
+                  {logo && (
+                    <button type="button" onClick={clearLogo} style={{
+                      fontSize: 11, color: "var(--error-soft)", background: "none", border: "none",
+                      cursor: "pointer", padding: 0, textAlign: "left",
+                    }}>
+                      삭제
+                    </button>
+                  )}
+                </div>
+                <input ref={logoInputRef} type="file" accept="image/*" hidden onChange={handleLogoChange} />
+              </div>
 
               <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
                 <FormField label="병원명 *">

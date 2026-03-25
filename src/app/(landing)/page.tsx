@@ -7,6 +7,7 @@ import { AnimatedSection } from "@/components/landing/AnimatedSection";
 import { Button } from "@/components/ui/button";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { ArrowRight, CheckCircle, Check, TrendingUp, BarChart3, Search, Camera, Star, MessageSquare, MapPin, Users, Sparkles, Monitor, RefreshCw, MessageCircle, ChevronDown } from "lucide-react";
+import { DoorKnockHero } from "@/components/landing/DoorKnockHero";
 import { useCounter } from "@/hooks/useScrollAnimation";
 
 export default function LandingPage() {
@@ -74,35 +75,25 @@ export default function LandingPage() {
   ];
 
   return (
-    <div className="min-h-screen bg-background overflow-hidden">
+    <div className="min-h-screen bg-background overflow-hidden premium-grain">
       <GlobalNav />
 
       {/* Hero */}
       <section className="relative pt-32 pb-20 min-h-screen flex items-center">
-        <div className="absolute inset-0 pointer-events-none overflow-hidden">
-          <video
-            src="/landing/knock-hero-video.mp4"
-            autoPlay
-            muted
-            loop
-            playsInline
-            className="absolute inset-0 w-full h-full object-cover opacity-30"
-          />
-          <div className="absolute inset-0 bg-gradient-to-b from-background/60 via-background/80 to-background" />
-        </div>
+        <DoorKnockHero />
         <div className="container mx-auto px-6 relative">
           <div className="content-max text-center">
             <AnimatedSection>
-              <div className="knock-badge mb-8 mx-auto w-fit">
+              <div className="knock-badge-premium mb-8 mx-auto w-fit">
                 병의원 전문 마케팅 파트너
               </div>
             </AnimatedSection>
 
             <AnimatedSection delay={0.1}>
-              <h1 className="text-4xl md:text-6xl lg:text-7xl font-black leading-tight mb-6">
+              <h1 className="text-4xl md:text-6xl lg:text-7xl font-black leading-tight mb-6 premium-title">
                 환자가 원장님 문을
                 <br />
-                <span className="text-[var(--knock-primary)] text-5xl md:text-7xl lg:text-[5.4rem]">
+                <span className="gradient-text text-5xl md:text-7xl lg:text-[5.4rem]">
                   노크합니다
                 </span>
               </h1>
@@ -113,8 +104,12 @@ export default function LandingPage() {
               <div className="flex items-center justify-center gap-0 mb-8 text-3xl md:text-4xl font-black tracking-widest text-foreground">
                 <span>KN</span>
                 <span className="relative inline-flex items-center justify-center w-[1.1em] h-[1.1em]">
-                  <span className="absolute inset-0 border-2 border-[var(--knock-primary)] rounded-full" />
-                  <span className="w-[0.3em] h-[0.3em] bg-[var(--knock-primary)] rounded-full" />
+                  {/* Glow pulse behind */}
+                  <span className="absolute inset-[-4px] rounded-full animate-knock-glow" style={{ background: "var(--knock-primary)", filter: "blur(12px)", opacity: 0 }} />
+                  {/* Outer ring */}
+                  <span className="absolute inset-0 border-2 border-[var(--knock-primary)] rounded-full" style={{ boxShadow: "0 0 8px var(--knock-primary), 0 0 2px var(--knock-primary)" }} />
+                  {/* Center dot */}
+                  <span className="w-[0.28em] h-[0.28em] bg-[var(--knock-primary)] rounded-full relative z-10" style={{ boxShadow: "0 0 6px var(--knock-primary), 0 0 12px var(--knock-primary)" }} />
                 </span>
                 <span>CK</span>
               </div>
@@ -132,7 +127,7 @@ export default function LandingPage() {
 
             <AnimatedSection delay={0.3}>
               <div className="flex flex-col sm:flex-row gap-4 justify-center">
-                <Button size="lg" className="bg-[var(--knock-primary)] text-white hover:bg-[var(--knock-primary-hover)] font-bold text-lg px-8 py-6 rounded-xl glow-button group" asChild>
+                <Button size="lg" className="bg-[var(--knock-primary)] text-white hover:bg-[var(--knock-primary-hover)] font-bold text-lg px-8 py-6 rounded-xl glow-button-gold group" asChild>
                   <a href="https://tally.so/r/q45d67" target="_blank" rel="noopener noreferrer">
                     무료 상담 시작하기
                     <ArrowRight className="ml-2 h-5 w-5 group-hover:translate-x-1 transition-transform" />
@@ -177,15 +172,18 @@ export default function LandingPage() {
         </div>
       </section>
 
+      <div className="section-divider" />
+
       {/* 고민 섹션 */}
       <section className="section-padding">
         <div className="container mx-auto px-6">
           <div className="content-max">
             <AnimatedSection>
-              <h2 className="text-3xl md:text-5xl font-black text-center mb-6">
+              <p className="premium-subtitle text-center mb-4">Pain Point</p>
+              <h2 className="text-3xl md:text-5xl font-black text-center mb-6 premium-title">
                 왜 이렇게까지 했는데도,
                 <br />
-                <span className="text-primary">신환이 안 늘까?</span>
+                <span className="gradient-text">신환이 안 늘까?</span>
               </h2>
             </AnimatedSection>
 
@@ -245,34 +243,37 @@ export default function LandingPage() {
         </div>
       </section>
 
+      <div className="section-divider" />
+
       {/* 왜 네이버 지도인가 */}
       <section className="section-padding bg-card/30">
         <div className="container mx-auto px-6">
           <div className="content-max">
             <AnimatedSection>
-              <h2 className="text-3xl md:text-5xl font-black text-center mb-16">
-                왜 <span className="text-accent">네이버 지도</span>인가?
+              <p className="premium-subtitle text-center mb-4">Why Naver Map</p>
+              <h2 className="text-3xl md:text-5xl font-black text-center mb-16 premium-title">
+                왜 <span className="gradient-text">네이버 지도</span>인가?
               </h2>
             </AnimatedSection>
 
             <div className="grid md:grid-cols-3 gap-6 mb-16">
               <AnimatedSection delay={0}>
-                <div className="knock-card p-8 text-center h-full">
-                  <div ref={mau.ref} className="text-4xl md:text-5xl font-black font-display text-primary mb-2">{mau.count}</div>
+                <div className="knock-card-glass stat-card p-8 text-center h-full">
+                  <div ref={mau.ref} className="text-4xl md:text-5xl font-black font-display counter-gradient mb-2">{mau.count}</div>
                   <p className="text-lg font-bold text-foreground mb-1">월간 사용자(MAU)</p>
                   <p className="text-sm text-muted-foreground">국내 지도 앱 시장 압도적 1위</p>
                 </div>
               </AnimatedSection>
               <AnimatedSection delay={0.1}>
-                <div className="knock-card p-8 text-center h-full">
-                  <div ref={share.ref} className="text-4xl md:text-5xl font-black font-display text-primary mb-2">{share.count}</div>
+                <div className="knock-card-glass stat-card p-8 text-center h-full">
+                  <div ref={share.ref} className="text-4xl md:text-5xl font-black font-display counter-gradient mb-2">{share.count}</div>
                   <p className="text-lg font-bold text-foreground mb-1">점유율</p>
                   <p className="text-sm text-muted-foreground">지도 앱 사용자 중 네이버 지도 비율</p>
                 </div>
               </AnimatedSection>
               <AnimatedSection delay={0.2}>
-                <div className="knock-card p-8 text-center h-full">
-                  <div className="text-4xl md:text-5xl font-black font-display text-primary mb-2">½+</div>
+                <div className="knock-card-glass stat-card p-8 text-center h-full">
+                  <div className="text-4xl md:text-5xl font-black font-display counter-gradient mb-2">½+</div>
                   <p className="text-lg font-bold text-foreground mb-1">국민 절반 이상</p>
                   <p className="text-sm text-muted-foreground">&apos;지도→플레이스&apos; 검색은 기본 경로</p>
                 </div>
@@ -309,8 +310,9 @@ export default function LandingPage() {
         <div className="container mx-auto px-6">
           <div className="content-max">
             <AnimatedSection>
-              <h2 className="text-3xl md:text-5xl font-black text-center mb-4">실제 결과로 증명합니다</h2>
-              <p className="text-xl text-primary font-bold text-center mb-12">69위 → 1위, 딱 1달</p>
+              <p className="premium-subtitle text-center mb-4">Proven Results</p>
+              <h2 className="text-3xl md:text-5xl font-black text-center mb-4 premium-title">실제 결과로 증명합니다</h2>
+              <p className="text-xl gradient-text-gold font-bold text-center mb-12">69위 → 1위, 딱 1달</p>
             </AnimatedSection>
 
             {/* Rank chart */}
@@ -363,7 +365,7 @@ export default function LandingPage() {
         <div className="container mx-auto px-6">
           <div className="content-max text-center">
             <AnimatedSection>
-              <div ref={revenue.ref} className="text-7xl md:text-9xl font-black font-display text-primary mb-4">
+              <div ref={revenue.ref} className="text-7xl md:text-9xl font-black font-display counter-gradient mb-4">
                 {revenue.count}
               </div>
               <p className="text-xl md:text-2xl text-foreground font-bold mb-4">매출 증가 달성</p>
@@ -457,7 +459,8 @@ export default function LandingPage() {
         <div className="container mx-auto px-6">
           <div className="content-max">
             <AnimatedSection>
-              <h2 className="text-3xl md:text-5xl font-black text-center mb-4">무엇을 채워주는가?</h2>
+              <p className="premium-subtitle text-center mb-4">Our Services</p>
+              <h2 className="text-3xl md:text-5xl font-black text-center mb-4 premium-title">무엇을 채워주는가?</h2>
               <p className="text-muted-foreground text-center mb-16 text-lg">
                 병원 성장을 위한 모든 디지털 요소를 한 번에 해결합니다.
               </p>
@@ -466,7 +469,7 @@ export default function LandingPage() {
             <div className="grid md:grid-cols-2 gap-6">
               {services.map((svc, i) => {
                 const cardContent = (
-                  <div className="knock-card p-8 h-full cursor-pointer transition-all hover:border-[var(--knock-primary)]/[0.44]">
+                  <div className="knock-card-glass knock-card-glow p-8 h-full cursor-pointer transition-all hover:border-[var(--knock-primary)]/[0.44]">
                     <div className="flex items-center gap-3 mb-6">
                       <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center">
                         <svc.icon className="w-5 h-5 text-primary" />
@@ -517,13 +520,14 @@ export default function LandingPage() {
         <div className="container mx-auto px-6">
           <div className="content-max">
             <AnimatedSection>
-              <h2 className="text-3xl md:text-5xl font-black text-center mb-16">어떻게 다른가?</h2>
+              <p className="premium-subtitle text-center mb-4">Differentiators</p>
+              <h2 className="text-3xl md:text-5xl font-black text-center mb-16 premium-title">어떻게 다른가?</h2>
             </AnimatedSection>
 
             <div className="grid md:grid-cols-2 gap-6">
               {differentiators.map((item, i) => (
                 <AnimatedSection key={i} delay={i * 0.1}>
-                  <div className="knock-card p-8 h-full hover:border-primary/40 transition-colors">
+                  <div className="knock-card-glass knock-card-glow p-8 h-full hover:border-primary/40 transition-colors">
                     <div className="flex items-start gap-3 mb-3">
                       <Sparkles className="w-6 h-6 text-primary flex-shrink-0 mt-0.5" />
                       <h3 className="text-lg font-bold text-foreground">{item.title}</h3>
@@ -551,7 +555,8 @@ export default function LandingPage() {
         <div className="container mx-auto px-6">
           <div className="content-max">
             <AnimatedSection>
-              <h2 className="text-3xl md:text-5xl font-black text-center mb-4">이런 원장님께 추천드립니다</h2>
+              <p className="premium-subtitle text-center mb-4">For You</p>
+              <h2 className="text-3xl md:text-5xl font-black text-center mb-4 premium-title">이런 원장님께 추천드립니다</h2>
               <p className="text-muted-foreground text-center mb-12">1개라도 해당되면 노크가 답입니다.</p>
             </AnimatedSection>
 
@@ -571,7 +576,7 @@ export default function LandingPage() {
             <AnimatedSection delay={0.2}>
               <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
                 {targetBusinesses.map((biz, i) => (
-                  <div key={i} className="knock-card p-6 text-center hover:border-primary/50 hover:scale-105 transition-all cursor-default">
+                  <div key={i} className="knock-card-glass p-6 text-center hover:border-primary/50 hover:scale-105 transition-all cursor-default">
                     <div className="text-4xl mb-3">{biz.emoji}</div>
                     <p className="text-foreground font-semibold">{biz.name}</p>
                   </div>
@@ -598,7 +603,7 @@ export default function LandingPage() {
                 { icon: MessageCircle, title: "카카오톡 채널", desc: "카카오톡 채널 개설부터 운영까지, 고객과의 소통을 도와드립니다.", emoji: "\uD83D\uDCAC" },
               ].map((item, i) => (
                 <AnimatedSection key={i} delay={i * 0.1}>
-                  <div className="knock-card p-8 text-center hover:border-primary/50 transition-all hover:-translate-y-1">
+                  <div className="knock-card-glass knock-card-glow p-8 text-center hover:border-primary/50 transition-all hover:-translate-y-1">
                     <div className="text-5xl mb-4">{item.emoji}</div>
                     <h3 className="text-xl font-bold text-foreground mb-2">{item.title}</h3>
                     <p className="text-muted-foreground text-sm">{item.desc}</p>
@@ -615,12 +620,13 @@ export default function LandingPage() {
         <div className="container mx-auto px-6">
           <div className="max-w-3xl mx-auto">
             <AnimatedSection>
-              <h2 className="text-3xl md:text-4xl font-black text-center mb-12">자주 묻는 질문</h2>
+              <p className="premium-subtitle text-center mb-4">FAQ</p>
+              <h2 className="text-3xl md:text-4xl font-black text-center mb-12 premium-title">자주 묻는 질문</h2>
             </AnimatedSection>
 
             <Accordion type="single" collapsible className="space-y-3">
               {faqs.map((faq, i) => (
-                <AccordionItem key={i} value={`faq-${i}`} className="knock-card px-6">
+                <AccordionItem key={i} value={`faq-${i}`} className="knock-card-glass faq-premium px-6">
                   <AccordionTrigger className="text-left font-semibold hover:text-primary transition-colors py-5">
                     {faq.q}
                   </AccordionTrigger>
@@ -672,20 +678,22 @@ export default function LandingPage() {
         </div>
       </section>
 
+      <div className="section-divider" />
+
       {/* Final CTA */}
-      <section id="cta-section" className="section-padding relative">
+      <section id="cta-section" className="section-padding relative aurora-bg">
         <div className="absolute inset-0 pointer-events-none">
           <div className="absolute bottom-0 left-1/2 -translate-x-1/2 w-[600px] h-[300px] bg-primary/10 rounded-full blur-[150px]" />
         </div>
         <div className="container mx-auto px-6 relative">
           <div className="content-max text-center space-y-8">
             <AnimatedSection>
-              <h2 className="text-3xl md:text-5xl font-black">
+              <h2 className="text-3xl md:text-5xl font-black premium-title">
                 지금, 원장님의 병원이
                 <br />
                 네이버 지도에서 얼마나
                 <br />
-                <span className="text-primary">보이는지 확인해보세요</span>
+                <span className="gradient-text">보이는지 확인해보세요</span>
               </h2>
             </AnimatedSection>
             <AnimatedSection delay={0.1}>
@@ -694,7 +702,7 @@ export default function LandingPage() {
               </p>
             </AnimatedSection>
             <AnimatedSection delay={0.2}>
-              <Button size="lg" className="bg-primary text-primary-foreground hover:bg-primary/90 font-bold text-xl px-12 py-7 rounded-xl glow-button group" asChild>
+              <Button size="lg" className="bg-primary text-primary-foreground hover:bg-primary/90 font-bold text-xl px-12 py-7 rounded-xl glow-button-gold group" asChild>
                 <a href="https://tally.so/r/q45d67" target="_blank" rel="noopener noreferrer">
                   무료 진단 요청하기
                   <ArrowRight className="ml-2 h-5 w-5 group-hover:translate-x-1 transition-transform" />
