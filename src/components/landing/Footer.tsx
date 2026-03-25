@@ -5,7 +5,42 @@ export const Footer = () => (
     <div className="container mx-auto px-6">
       <div className="flex flex-col md:flex-row items-center justify-between gap-4">
         <div className="flex items-center">
-          <img src="/landing/knock-logo.png" alt="KNOCK 병원 마케팅" className="h-12 w-auto" />
+          <span
+            style={{
+              fontFamily: "'Outfit', var(--font-outfit), sans-serif",
+              fontWeight: 900,
+              fontSize: 22,
+              display: "inline-flex",
+              alignItems: "center",
+              letterSpacing: "0.04em",
+              color: "#0f172a",
+            }}
+          >
+            KN
+            <span
+              style={{
+                display: "inline-flex",
+                alignItems: "center",
+                justifyContent: "center",
+                width: "0.95em",
+                height: "0.95em",
+                border: "2.5px solid var(--knock-primary, #2563eb)",
+                borderRadius: "50%",
+                position: "relative",
+                margin: "0 0.5px",
+              }}
+            >
+              <span
+                style={{
+                  width: "0.28em",
+                  height: "0.28em",
+                  background: "var(--knock-primary, #2563eb)",
+                  borderRadius: "50%",
+                }}
+              />
+            </span>
+            CK
+          </span>
         </div>
         <div className="flex items-center gap-6 text-sm text-muted-foreground">
           <Link href="/" className="hover:text-foreground transition-colors">홈</Link>
