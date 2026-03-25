@@ -7,11 +7,11 @@ import { Footer } from "@/components/landing/Footer";
 import { AnimatedSection } from "@/components/landing/AnimatedSection";
 import { Button } from "@/components/ui/button";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
-import { ArrowRight, CheckCircle, Check, TrendingUp, BarChart3, Search, Star, MapPin, Sparkles, Monitor, RefreshCw, MessageCircle } from "lucide-react";
+import { ArrowRight, CheckCircle, Check, TrendingUp, BarChart3, Search, Star, MapPin, Sparkles, Monitor, RefreshCw, MessageCircle, X as XIcon, ChevronRight } from "lucide-react";
 import { DoorKnockHero } from "@/components/landing/DoorKnockHero";
 
 
-/* ── Logo Marquee ── */
+/* ── Logo Marquee with fade edges ── */
 function LogoMarquee() {
   const logos = [
     "양주이지치과", "노내과의원", "제주팔팔의원", "서울미소치과",
@@ -21,9 +21,13 @@ function LogoMarquee() {
   ];
   return (
     <div className="logo-marquee-wrap">
+      <div className="logo-marquee-fade" />
       <div className="logo-marquee-track">
         {logos.map((name, i) => (
-          <span key={i} className="logo-marquee-item">{name}</span>
+          <span key={i} className="logo-marquee-item">
+            <span className="logo-marquee-dot" />
+            {name}
+          </span>
         ))}
       </div>
     </div>
@@ -67,11 +71,24 @@ export default function LandingPage() {
   const stat2 = useInViewCounter(68, 2000, "%");
   const stat3 = useInViewCounter(300, 2500, "%");
 
+  /* #4 Rank chart in-view animation */
+  const chartRef = useRef<HTMLDivElement>(null);
+  const [chartVisible, setChartVisible] = useState(false);
+  useEffect(() => {
+    const el = chartRef.current;
+    if (!el) return;
+    const obs = new IntersectionObserver(([e]) => {
+      if (e.isIntersecting) { setChartVisible(true); obs.disconnect(); }
+    }, { threshold: 0.3 });
+    obs.observe(el);
+    return () => obs.disconnect();
+  }, []);
+
   const services = [
-    { title: "네이버 플레이스", icon: MapPin, items: ["상위노출 구조 설계", "사진·영상 촬영", "상세설명·메뉴·키워드 최적화", "리뷰 전략", "네이버 예약 연동", "지도에서 선택받는 구조 설계"], linkText: "네이버 플레이스 상위노출 자세히 보기 →", linkHref: "/place" },
-    { title: "블로그 / 웹사이트", icon: Search, items: ["검색 상위 노출 컨텐츠", "브랜딩 스토리 작성", "고품질 사진/영상 콘텐츠", "홈페이지 제작/리뉴얼", "안내/예약 페이지 구축"], linkText: "블로그·웹사이트 서비스 자세히 보기 →", linkHref: "/place" },
-    { title: "SNS·광고·유입 구조", icon: BarChart3, items: ["인스타그램 운영 / 릴스 제작", "유튜브 숏폼·영상 제작", "네이버 CPC / 파워링크 광고", "틱톡 / 카카오 / 네이버콘텐츠 광고", "랜딩페이지 최적화", "전환형 콘텐츠 설계"], linkText: "광고·유입 전략 자세히 보기 →", linkHref: "https://tally.so/r/q45d67", external: true },
-    { title: "병원 성장 전략", icon: TrendingUp, items: ["브랜딩 전략", "영업·마케팅 세일즈 퍼널 설계", "환자 문의·예약 자동화", "CRM 기반 전환 전략 설계"], linkText: "성장 전략 상담받기 →", linkHref: "https://tally.so/r/q45d67", external: true },
+    { title: "네이버 플레이스", icon: MapPin, color: "#10b981", bg: "rgba(16,185,129,0.1)", items: ["상위노출 구조 설계", "사진·영상 촬영", "상세설명·메뉴·키워드 최적화", "리뷰 전략", "네이버 예약 연동", "지도에서 선택받는 구조 설계"], linkText: "네이버 플레이스 상위노출 자세히 보기 →", linkHref: "/place" },
+    { title: "블로그 / 웹사이트", icon: Search, color: "#3b82f6", bg: "rgba(59,130,246,0.1)", items: ["검색 상위 노출 컨텐츠", "브랜딩 스토리 작성", "고품질 사진/영상 콘텐츠", "홈페이지 제작/리뉴얼", "안내/예약 페이지 구축"], linkText: "블로그·웹사이트 서비스 자세히 보기 →", linkHref: "/place" },
+    { title: "SNS·광고·유입 구조", icon: BarChart3, color: "#f59e0b", bg: "rgba(245,158,11,0.1)", items: ["인스타그램 운영 / 릴스 제작", "유튜브 숏폼·영상 제작", "네이버 CPC / 파워링크 광고", "틱톡 / 카카오 / 네이버콘텐츠 광고", "랜딩페이지 최적화", "전환형 콘텐츠 설계"], linkText: "광고·유입 전략 자세히 보기 →", linkHref: "https://tally.so/r/q45d67", external: true },
+    { title: "병원 성장 전략", icon: TrendingUp, color: "#8b5cf6", bg: "rgba(139,92,246,0.1)", items: ["브랜딩 전략", "영업·마케팅 세일즈 퍼널 설계", "환자 문의·예약 자동화", "CRM 기반 전환 전략 설계"], linkText: "성장 전략 상담받기 →", linkHref: "https://tally.so/r/q45d67", external: true },
   ];
 
   const differentiators = [
@@ -98,6 +115,8 @@ export default function LandingPage() {
     { q: "광고 없이도 가능한가요?", a: "네이버 알고리즘 + 콘텐츠 + 방문 패턴 최적화만으로도 충분합니다. 오히려 자연 상위노출이 더 높은 전환율을 보입니다." },
     { q: "얼마나 걸리나요?", a: "보통 세팅 + 최적화는 2주, 효과는 평균 4주 후부터 나타납니다." },
     { q: "비용은 어떻게 되나요?", a: "병원 규모, 현재 상태, 필요한 서비스에 따라 맞춤 견적을 드립니다. 무료 상담을 통해 최적의 플랜을 제안해드립니다." },
+    { q: "다른 지역에서도 가능한가요?", a: "네, 전국 어디든 가능합니다. 서울·수도권은 물론 지방 병원도 원격 + 현장 방문 병행으로 진행합니다." },
+    { q: "기존 업체에서 넘어올 수 있나요?", a: "물론입니다. 기존 세팅을 분석한 뒤 부족한 부분만 보완하므로, 처음부터 다시 시작하지 않아도 됩니다." },
   ];
 
   const rankData = [
@@ -143,7 +162,7 @@ export default function LandingPage() {
               </AnimatedSection>
 
               <AnimatedSection delay={0.15}>
-                <div className="flex items-center justify-center gap-0 mb-8 text-3xl md:text-4xl font-black tracking-widest text-white">
+                <div className="flex items-center justify-center gap-0 mb-8 text-2xl sm:text-3xl md:text-4xl font-black tracking-widest text-white">
                   <span>KN</span>
                   <span className="relative inline-flex items-center justify-center w-[1.1em] h-[1.1em]">
                     <span className="absolute inset-0 border-2 border-blue-400 rounded-full" style={{ boxShadow: "0 0 12px rgba(96,165,250,0.5)" }} />
@@ -222,20 +241,18 @@ export default function LandingPage() {
                   <div className="comparison-card comparison-before">
                     <div className="comparison-label">기존 마케팅</div>
                     <ul className="comparison-list">
-                      <li>전단지 뿌리기</li>
-                      <li>인스타 광고 몇 번</li>
-                      <li>블로그 대행 맡기기</li>
-                      <li>리뷰 이벤트</li>
+                      {["전단지 뿌리기", "인스타 광고 몇 번", "블로그 대행 맡기기", "리뷰 이벤트"].map((t, j) => (
+                        <li key={j}><XIcon className="comparison-icon-bad" />{t}</li>
+                      ))}
                     </ul>
-                    <div className="comparison-result comparison-result-bad">결과: 늘 "거기서 거기"</div>
+                    <div className="comparison-result comparison-result-bad">결과: 늘 &ldquo;거기서 거기&rdquo;</div>
                   </div>
                   <div className="comparison-card comparison-after">
                     <div className="comparison-label">노크 시스템</div>
                     <ul className="comparison-list">
-                      <li>네이버 지도 구조 최적화</li>
-                      <li>데이터 기반 키워드 전략</li>
-                      <li>촬영+콘텐츠+광고 통합</li>
-                      <li>환자 유입 자동화 구조</li>
+                      {["네이버 지도 구조 최적화", "데이터 기반 키워드 전략", "촬영+콘텐츠+광고 통합", "환자 유입 자동화 구조"].map((t, j) => (
+                        <li key={j}><Check className="comparison-icon-good" />{t}</li>
+                      ))}
                     </ul>
                     <div className="comparison-result comparison-result-good">결과: 신환 유입 300% 증가</div>
                   </div>
@@ -265,6 +282,7 @@ export default function LandingPage() {
       {/* ═══ Stats Bar ═══ */}
       <section className="stats-bar">
         <div className="container mx-auto px-6">
+          <p className="text-center text-sm font-semibold tracking-widest text-blue-300/70 uppercase mb-8">네이버 지도, 왜 중요한가?</p>
           <div className="stats-grid">
             <div className="stat-block" ref={stat1.ref}>
               <div className="stat-number">{stat1.count}</div>
@@ -298,19 +316,25 @@ export default function LandingPage() {
             </AnimatedSection>
 
             <AnimatedSection delay={0.1}>
-              <div className="knock-card p-8">
+              <div className="knock-card p-8" ref={chartRef}>
                 <div className="flex items-end justify-between gap-2 h-64 mb-6">
                   {rankData.map((d, i) => {
                     const height = Math.max(8, ((70 - d.rank) / 69) * 100);
                     const isTop = d.rank <= 5;
                     return (
                       <div key={i} className="flex-1 flex flex-col items-center justify-end h-full">
-                        <span className={`text-xs font-bold mb-1 ${isTop ? "text-emerald-500" : "text-muted-foreground"}`}>
+                        <span className={`text-xs font-bold mb-1 transition-opacity duration-500 ${isTop ? "text-emerald-500" : "text-muted-foreground"} ${chartVisible ? "opacity-100" : "opacity-0"}`}
+                          style={{ transitionDelay: `${i * 80 + 300}ms` }}>
                           {d.rank}위
                         </span>
                         <div
-                          className={`w-full rounded-t-lg transition-all duration-700 ${isTop ? "bg-emerald-500" : "bg-primary/40"}`}
-                          style={{ height: `${height}%`, minHeight: "8px" }}
+                          className={`w-full rounded-t-lg transition-all ease-out ${isTop ? "bg-emerald-500" : "bg-primary/40"}`}
+                          style={{
+                            height: chartVisible ? `${height}%` : "0%",
+                            minHeight: chartVisible ? "8px" : "0px",
+                            transitionDuration: "800ms",
+                            transitionDelay: `${i * 80}ms`,
+                          }}
                         />
                         <span className="text-[10px] text-muted-foreground mt-2 hidden md:block">{d.date}</span>
                       </div>
@@ -352,8 +376,8 @@ export default function LandingPage() {
                 const cardContent = (
                   <div className="knock-card-glass knock-card-glow p-8 h-full cursor-pointer transition-all hover:border-[var(--knock-primary)]/[0.44]">
                     <div className="flex items-center gap-3 mb-6">
-                      <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center">
-                        <svc.icon className="w-5 h-5 text-primary" />
+                      <div className="w-10 h-10 rounded-xl flex items-center justify-center" style={{ background: svc.bg }}>
+                        <svc.icon className="w-5 h-5" style={{ color: svc.color }} />
                       </div>
                       <h3 className="text-xl font-bold text-foreground">{svc.title}</h3>
                     </div>
@@ -432,10 +456,10 @@ export default function LandingPage() {
 
             <AnimatedSection delay={0.1}>
               <div className="knock-card p-8 mb-12">
-                <div className="space-y-3">
+                <div className="space-y-2">
                   {checklist.map((item, i) => (
-                    <div key={i} className="flex items-start gap-3 p-3 rounded-lg hover:bg-card-hover transition-colors">
-                      <CheckCircle className="w-5 h-5 text-primary mt-0.5 flex-shrink-0" />
+                    <div key={i} className="checklist-row">
+                      <span className="checklist-num">{String(i + 1).padStart(2, "0")}</span>
                       <p className="text-foreground">{item}</p>
                     </div>
                   ))}
@@ -531,11 +555,13 @@ export default function LandingPage() {
                 { emoji: "📊", title: "실적 레퍼런스", sub: "실시간 순위 트래킹 데이터 공개", href: "/references" },
               ].map((card, i) => (
                 <AnimatedSection key={i} delay={i * 0.1}>
-                  <Link href={card.href} className="explore-card block text-center">
+                  <Link href={card.href} className="explore-card group block text-center">
                     <div className="text-2xl mb-3">{card.emoji}</div>
                     <h3 className="text-base font-bold text-foreground mb-2">{card.title}</h3>
                     <p className="text-[13px] text-muted-foreground mb-4">{card.sub}</p>
-                    <span className="text-primary text-sm font-semibold">자세히 보기 →</span>
+                    <span className="inline-flex items-center gap-1 text-primary text-sm font-semibold">
+                      자세히 보기 <ChevronRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
+                    </span>
                   </Link>
                 </AnimatedSection>
               ))}

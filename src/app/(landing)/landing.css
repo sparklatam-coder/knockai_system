@@ -456,25 +456,46 @@
   background: #fff;
   border-top: 1px solid hsl(var(--border));
   border-bottom: 1px solid hsl(var(--border));
+  position: relative;
+}
+
+/* Fade edges for smooth scroll effect */
+.logo-marquee-fade {
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  pointer-events: none;
+  background: linear-gradient(90deg, #fff 0%, transparent 10%, transparent 90%, #fff 100%);
 }
 
 .logo-marquee-track {
   display: flex;
-  gap: 3rem;
+  gap: 2.5rem;
   animation: marquee-scroll 30s linear infinite;
   width: max-content;
 }
 
 .logo-marquee-item {
-  font-size: 0.95rem;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.9rem;
   font-weight: 600;
   color: hsl(var(--muted-foreground));
   white-space: nowrap;
-  opacity: 0.6;
+  opacity: 0.5;
   transition: opacity 0.3s;
 }
 .logo-marquee-item:hover {
   opacity: 1;
+}
+
+.logo-marquee-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: hsl(var(--primary) / 0.3);
+  flex-shrink: 0;
 }
 
 @keyframes marquee-scroll {
@@ -540,14 +561,23 @@
 .comparison-list li {
   font-size: 0.9rem;
   color: hsl(var(--foreground));
-  padding-left: 1.25rem;
-  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
 }
-.comparison-list li::before {
-  content: "•";
-  position: absolute;
-  left: 0;
-  color: hsl(var(--muted-foreground));
+
+.comparison-icon-bad {
+  width: 16px;
+  height: 16px;
+  color: #ef4444;
+  flex-shrink: 0;
+}
+
+.comparison-icon-good {
+  width: 16px;
+  height: 16px;
+  color: #22c55e;
+  flex-shrink: 0;
 }
 
 .comparison-result {
@@ -722,6 +752,36 @@
   transform: translateY(-2px);
 }
 
+/* ── Checklist Row ── */
+.checklist-row {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 0.75rem 1rem;
+  border-radius: 10px;
+  transition: all 0.2s ease;
+  cursor: default;
+}
+.checklist-row:hover {
+  background: hsl(var(--primary) / 0.04);
+  transform: translateX(4px);
+}
+
+.checklist-num {
+  font-size: 0.75rem;
+  font-weight: 800;
+  color: hsl(var(--primary));
+  background: hsl(var(--primary) / 0.08);
+  width: 28px;
+  height: 28px;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  font-variant-numeric: tabular-nums;
+}
+
 /* ── Mobile responsiveness for hero stats ── */
 @media (max-width: 640px) {
   .hero-stats {
@@ -736,5 +796,19 @@
   }
   .revenue-number {
     font-size: 3rem;
+  }
+  .section-padding {
+    padding-top: 4rem;
+    padding-bottom: 4rem;
+  }
+  .dark-cta {
+    padding: 4rem 0;
+  }
+  .comparison-card {
+    padding: 1.5rem;
+  }
+  .checklist-row {
+    gap: 0.75rem;
+    padding: 0.625rem 0.5rem;
   }
 }

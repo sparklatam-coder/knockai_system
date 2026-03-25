@@ -255,9 +255,9 @@ export function DoorKnockHero({ enableScrollOpen = false, onProgress }: DoorKnoc
         </div>
       </div>
 
-      {/* Bottom gradient */}
+      {/* Bottom gradient — matches dark hero */}
       <div className="absolute inset-x-0 bottom-0 h-40" style={{
-        background: "linear-gradient(to top, #ffffff, transparent)", zIndex: 3,
+        background: "linear-gradient(to top, #0f172a, transparent)", zIndex: 3,
       }} />
     </div>
   );
