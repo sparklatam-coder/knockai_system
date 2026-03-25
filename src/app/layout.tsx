@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Noto_Sans_KR } from "next/font/google";
 import { AuthProvider } from "@/components/providers/auth-provider";
+import { Analytics } from "@vercel/analytics/react";
 import "./tailwind.css";
 import "./globals.css";
 import "../../knock-design-system.css";
@@ -38,6 +39,7 @@ export default function RootLayout({
       </head>
       <body className={notoSansKr.variable}>
         <AuthProvider>{children}</AuthProvider>
+        <Analytics />
       </body>
     </html>
   );
