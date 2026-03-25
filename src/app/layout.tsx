@@ -13,6 +13,12 @@ const notoSansKr = Noto_Sans_KR({
 export const metadata: Metadata = {
   title: "노크 병원 마케팅 시스템",
   description: "신규 환자 확보 파이프라인과 CS 360 노크 시스템을 시각화한 로컬 전략 페이지",
+  icons: {
+    icon: [
+      { url: "/favicon.svg", type: "image/svg+xml" },
+      { url: "/favicon.ico", sizes: "any" },
+    ],
+  },
 };
 
 export default function RootLayout({
