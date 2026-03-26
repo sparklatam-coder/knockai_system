@@ -15,7 +15,6 @@ const serviceItems = [
 /* ── nav link items ── */
 const navLinks = [
   { label: "홈", href: "/" },
-  { label: "마켓맵", href: "/map" },
   { label: "레퍼런스", href: "/references" },
   { label: "노크 시스템", href: "/system" },
 ];
