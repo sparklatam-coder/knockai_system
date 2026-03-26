@@ -65,7 +65,15 @@ function useInViewCounter(end: number, duration: number, suffix: string) {
 
 export default function LandingPage() {
   const [doorProgress, setDoorProgress] = useState(0);
+  const [isMobile, setIsMobile] = useState(false);
   const handleDoorProgress = useCallback((p: number) => setDoorProgress(p), []);
+
+  useEffect(() => {
+    const check = () => setIsMobile(window.innerWidth < 768);
+    check();
+    window.addEventListener("resize", check);
+    return () => window.removeEventListener("resize", check);
+  }, []);
 
   const stat1 = useInViewCounter(2650, 2000, "만");
   const stat2 = useInViewCounter(68, 2000, "%");
@@ -87,8 +95,8 @@ export default function LandingPage() {
   const services = [
     { title: "네이버 플레이스", icon: MapPin, color: "#10b981", bg: "rgba(16,185,129,0.1)", items: ["상위노출 구조 설계", "사진·영상 촬영", "상세설명·메뉴·키워드 최적화", "리뷰 전략", "네이버 예약 연동", "지도에서 선택받는 구조 설계"], linkText: "네이버 플레이스 상위노출 자세히 보기 →", linkHref: "/place" },
     { title: "블로그 / 웹사이트", icon: Search, color: "#3b82f6", bg: "rgba(59,130,246,0.1)", items: ["검색 상위 노출 컨텐츠", "브랜딩 스토리 작성", "고품질 사진/영상 콘텐츠", "홈페이지 제작/리뉴얼", "안내/예약 페이지 구축"], linkText: "블로그·웹사이트 서비스 자세히 보기 →", linkHref: "/place" },
-    { title: "SNS·광고·유입 구조", icon: BarChart3, color: "#f59e0b", bg: "rgba(245,158,11,0.1)", items: ["인스타그램 운영 / 릴스 제작", "유튜브 숏폼·영상 제작", "네이버 CPC / 파워링크 광고", "틱톡 / 카카오 / 네이버콘텐츠 광고", "랜딩페이지 최적화", "전환형 콘텐츠 설계"], linkText: "광고·유입 전략 자세히 보기 →", linkHref: "https://tally.so/r/q45d67", external: true },
-    { title: "병원 성장 전략", icon: TrendingUp, color: "#8b5cf6", bg: "rgba(139,92,246,0.1)", items: ["브랜딩 전략", "영업·마케팅 세일즈 퍼널 설계", "환자 문의·예약 자동화", "CRM 기반 전환 전략 설계"], linkText: "성장 전략 상담받기 →", linkHref: "https://tally.so/r/q45d67", external: true },
+    { title: "SNS·광고·유입 구조", icon: BarChart3, color: "#f59e0b", bg: "rgba(245,158,11,0.1)", items: ["인스타그램 운영 / 릴스 제작", "유튜브 숏폼·영상 제작", "네이버 CPC / 파워링크 광고", "틱톡 / 카카오 / 네이버콘텐츠 광고", "랜딩페이지 최적화", "전환형 콘텐츠 설계"], linkText: "광고·유입 전략 자세히 보기 →", linkHref: "https://open.kakao.com/o/saS7qini", external: true },
+    { title: "병원 성장 전략", icon: TrendingUp, color: "#8b5cf6", bg: "rgba(139,92,246,0.1)", items: ["브랜딩 전략", "영업·마케팅 세일즈 퍼널 설계", "환자 문의·예약 자동화", "CRM 기반 전환 전략 설계"], linkText: "성장 전략 상담받기 →", linkHref: "https://open.kakao.com/o/saS7qini", external: true },
   ];
 
   const differentiators = [
@@ -131,14 +139,14 @@ export default function LandingPage() {
       <GlobalNav />
 
       {/* ═══ HERO — dark overlay + door animation ═══ */}
-      <div style={{ height: "145vh", position: "relative" }}>
-        <section className="sticky top-0 relative pt-32 pb-20 h-screen flex items-center overflow-hidden hero-dark">
-          <DoorKnockHero enableScrollOpen onProgress={handleDoorProgress} />
+      <div style={{ height: isMobile ? "auto" : "145vh", position: "relative" }}>
+        <section className={`${isMobile ? "relative" : "sticky top-0"} relative pt-32 pb-20 ${isMobile ? "min-h-[80vh]" : "h-screen"} flex items-center overflow-hidden hero-dark`}>
+          {!isMobile && <DoorKnockHero enableScrollOpen onProgress={handleDoorProgress} />}
           {/* Dark gradient overlay */}
           <div className="hero-overlay" />
           <div
             className="container mx-auto px-6 relative z-10"
-            style={{
+            style={isMobile ? {} : {
               opacity: Math.max(0, 1 - doorProgress * 2.5),
               transform: `translateY(${-doorProgress * 60}px)`,
               willChange: doorProgress > 0 ? "opacity, transform" : undefined,
@@ -185,13 +193,13 @@ export default function LandingPage() {
               <AnimatedSection delay={0.3}>
                 <div className="flex flex-col sm:flex-row gap-4 justify-center">
                   <Button size="lg" className="hero-cta-primary group" asChild>
-                    <a href="https://tally.so/r/q45d67" target="_blank" rel="noopener noreferrer">
+                    <a href="https://open.kakao.com/o/saS7qini" target="_blank" rel="noopener noreferrer">
                       무료 상담 시작하기
                       <ArrowRight className="ml-2 h-5 w-5 group-hover:translate-x-1 transition-transform" />
                     </a>
                   </Button>
                   <Button size="lg" className="hero-cta-secondary group" asChild>
-                    <a href="https://tally.so/r/q45d67" target="_blank" rel="noopener noreferrer">
+                    <a href="https://open.kakao.com/o/saS7qini" target="_blank" rel="noopener noreferrer">
                       우리 병원 순위 확인하기
                       <ArrowRight className="ml-2 h-5 w-5 group-hover:translate-x-1 transition-transform" />
                     </a>
@@ -574,7 +582,7 @@ export default function LandingPage() {
             </AnimatedSection>
             <AnimatedSection delay={0.2}>
               <Button size="lg" className="dark-cta-button group" asChild>
-                <a href="https://tally.so/r/q45d67" target="_blank" rel="noopener noreferrer">
+                <a href="https://open.kakao.com/o/saS7qini" target="_blank" rel="noopener noreferrer">
                   무료 진단 요청하기
                   <ArrowRight className="ml-2 h-5 w-5 group-hover:translate-x-1 transition-transform" />
                 </a>

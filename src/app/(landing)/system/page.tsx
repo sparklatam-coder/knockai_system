@@ -389,7 +389,7 @@ export default function Home() {
             무료 상담을 통해 우리 병원에 맞는 맞춤 전략을 설계해드립니다.
           </p>
           <a
-            href="https://tally.so/r/q45d67"
+            href="https://open.kakao.com/o/saS7qini"
             target="_blank"
             rel="noopener noreferrer"
             className="glow-button"

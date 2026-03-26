@@ -47,7 +47,7 @@ export const Footer = () => (
           <Link href="/place" className="hover:text-foreground transition-colors">네이버 플레이스</Link>
           <Link href="/youtube" className="hover:text-foreground transition-colors">유튜브</Link>
           <Link href="/references" className="hover:text-foreground transition-colors">실적</Link>
-          <a href="https://tally.so/r/q45d67" target="_blank" rel="noopener noreferrer" className="hover:text-primary transition-colors">무료 상담</a>
+          <a href="https://open.kakao.com/o/saS7qini" target="_blank" rel="noopener noreferrer" className="hover:text-primary transition-colors">무료 상담</a>
         </div>
         <p className="text-sm text-muted-foreground">© 2026 노크. All rights reserved.</p>
       </div>

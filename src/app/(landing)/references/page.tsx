@@ -1068,7 +1068,7 @@ export default function ReferencesPage() {
               </p>
             </AnimatedSection>
             <AnimatedSection delay={0.2}>
-              <a href="https://tally.so/r/q45d67" target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-2 bg-primary text-primary-foreground hover:bg-primary/90 font-bold text-xl px-12 py-7 rounded-xl glow-button">
+              <a href="https://open.kakao.com/o/saS7qini" target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-2 bg-primary text-primary-foreground hover:bg-primary/90 font-bold text-xl px-12 py-7 rounded-xl glow-button">
                 무료 상담 신청 →
               </a>
             </AnimatedSection>

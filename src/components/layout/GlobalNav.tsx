@@ -15,6 +15,7 @@ const serviceItems = [
 /* ── nav link items ── */
 const navLinks = [
   { label: "홈", href: "/" },
+  { label: "마켓맵", href: "/map" },
   { label: "레퍼런스", href: "/references" },
   { label: "노크 시스템", href: "/system" },
 ];
@@ -288,7 +289,7 @@ export function GlobalNav() {
             고객 로그인
           </Link>
           <a
-            href="https://tally.so/r/q45d67"
+            href="https://open.kakao.com/o/saS7qini"
             target="_blank"
             rel="noopener noreferrer"
             style={{
@@ -435,7 +436,7 @@ export function GlobalNav() {
 
           {/* 무료 상담 버튼 (full width) */}
           <a
-            href="https://tally.so/r/q45d67"
+            href="https://open.kakao.com/o/saS7qini"
             target="_blank"
             rel="noopener noreferrer"
             style={{

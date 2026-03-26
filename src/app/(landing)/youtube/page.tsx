@@ -64,7 +64,7 @@ export default function YouTubePage() {
 
             <AnimatedSection delay={0.3}>
               <Button size="lg" className="bg-primary text-primary-foreground hover:bg-primary/90 font-bold text-lg px-8 py-6 rounded-xl glow-button group" asChild>
-                <a href="https://tally.so/r/q45d67" target="_blank" rel="noopener noreferrer">
+                <a href="https://open.kakao.com/o/saS7qini" target="_blank" rel="noopener noreferrer">
                   무료 채널 전략 상담받기
                   <ArrowRight className="ml-2 h-5 w-5 group-hover:translate-x-1 transition-transform" />
                 </a>
@@ -490,7 +490,7 @@ export default function YouTubePage() {
             </AnimatedSection>
             <AnimatedSection delay={0.2}>
               <Button size="lg" className="bg-primary text-primary-foreground hover:bg-primary/90 font-bold text-xl px-12 py-7 rounded-xl glow-button group" asChild>
-                <a href="https://tally.so/r/q45d67" target="_blank" rel="noopener noreferrer">
+                <a href="https://open.kakao.com/o/saS7qini" target="_blank" rel="noopener noreferrer">
                   무료 채널 전략 상담받기
                   <ArrowRight className="ml-2 h-5 w-5 group-hover:translate-x-1 transition-transform" />
                 </a>
