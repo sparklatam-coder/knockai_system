@@ -3,8 +3,7 @@
 import { useState, useRef, useEffect } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Menu, X, ChevronDown, Map } from "lucide-react";
-import { useAuth } from "@/hooks/use-auth";
+import { Menu, X, ChevronDown } from "lucide-react";
 
 /* ── service dropdown items ── */
 const serviceItems = [
@@ -70,8 +69,6 @@ export function GlobalNav() {
   const serviceRef = useRef<HTMLDivElement>(null);
   const serviceTimeout = useRef<NodeJS.Timeout | null>(null);
   const pathname = usePathname();
-  const { role } = useAuth();
-  const isSuperAdmin = role === "super_admin";
 
   useEffect(() => {
     return () => {
@@ -272,39 +269,6 @@ export function GlobalNav() {
           className="hidden md:flex"
           style={{ alignItems: "center", gap: 16 }}
         >
-          {isSuperAdmin && (
-            <Link
-              href="/map"
-              style={{
-                display: "inline-flex",
-                alignItems: "center",
-                gap: 5,
-                fontSize: 13,
-                fontWeight: 700,
-                color: pathname === "/map" ? "var(--knock-primary)" : "var(--knock-text-muted)",
-                textDecoration: "none",
-                padding: "6px 12px",
-                borderRadius: 8,
-                background: pathname === "/map" ? "var(--knock-primary-dim)" : "transparent",
-                border: "1px solid",
-                borderColor: pathname === "/map" ? "var(--knock-primary)" : "var(--knock-border)",
-                transition: "all 0.2s",
-              }}
-              onMouseEnter={(e) => {
-                e.currentTarget.style.borderColor = "var(--knock-primary)";
-                e.currentTarget.style.color = "var(--knock-primary)";
-              }}
-              onMouseLeave={(e) => {
-                if (pathname !== "/map") {
-                  e.currentTarget.style.borderColor = "var(--knock-border)";
-                  e.currentTarget.style.color = "var(--knock-text-muted)";
-                }
-              }}
-            >
-              <Map style={{ width: 14, height: 14 }} />
-              마켓맵
-            </Link>
-          )}
           <Link
             href="/login"
             style={{
@@ -453,26 +417,6 @@ export function GlobalNav() {
               {link.label}
             </Link>
           ))}
-
-          {isSuperAdmin && (
-            <Link
-              href="/map"
-              onClick={() => setMobileOpen(false)}
-              style={{
-                display: "flex",
-                alignItems: "center",
-                gap: 8,
-                fontSize: 16,
-                fontWeight: 700,
-                color: pathname === "/map" ? "var(--knock-primary)" : "var(--knock-text-muted)",
-                padding: "14px 0",
-                textDecoration: "none",
-              }}
-            >
-              <Map style={{ width: 16, height: 16 }} />
-              마켓맵
-            </Link>
-          )}
 
           <Link
             href="/login"

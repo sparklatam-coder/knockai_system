@@ -1,6 +1,7 @@
 "use client";
 
 import { useRouter, usePathname } from "next/navigation";
+import { Map } from "lucide-react";
 import { useAuth } from "@/hooks/use-auth";
 
 export function SessionActions() {
@@ -94,6 +95,37 @@ export function SessionActions() {
             }}
           >
             {isAdminPage ? "👁 고객 대시보드" : "⚙ 관리자 페이지"}
+          </button>
+        )}
+        {role === "super_admin" && (
+          <button
+            type="button"
+            onClick={() => router.push("/map")}
+            style={{
+              padding: "6px 14px",
+              borderRadius: 8,
+              border: pathname === "/map"
+                ? "1px solid var(--accent-border)"
+                : "1px solid var(--overlay-5)",
+              background: pathname === "/map"
+                ? "var(--accent-bg)"
+                : "var(--overlay-3)",
+              color: pathname === "/map"
+                ? "var(--gP)"
+                : "var(--tsub)",
+              fontSize: 12,
+              fontWeight: 600,
+              cursor: "pointer",
+              transition: "all 0.15s",
+              whiteSpace: "nowrap",
+              flexShrink: 0,
+              display: "inline-flex",
+              alignItems: "center",
+              gap: 5,
+            }}
+          >
+            <Map style={{ width: 13, height: 13 }} />
+            마켓맵
           </button>
         )}
         <button
