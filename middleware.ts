@@ -2,7 +2,7 @@ import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
 import { supabaseAnonKey, supabaseUrl } from "./src/lib/env";
 
-const protectedPaths = ["/admin", "/dashboard"];
+const protectedPaths = ["/admin", "/dashboard", "/map"];
 
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
@@ -50,9 +50,13 @@ export async function middleware(request: NextRequest) {
     return NextResponse.redirect(new URL("/dashboard", request.url));
   }
 
+  if (pathname.startsWith("/map") && userRole !== "super_admin") {
+    return NextResponse.redirect(new URL("/", request.url));
+  }
+
   return response;
 }
 
 export const config = {
-  matcher: ["/admin/:path*", "/dashboard/:path*"],
+  matcher: ["/admin/:path*", "/dashboard/:path*", "/map/:path*"],
 };
