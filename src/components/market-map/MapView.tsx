@@ -1,28 +1,16 @@
 "use client";
 
-import { memo, useMemo } from "react";
-import {
-  ComposableMap,
-  Geographies,
-  Geography,
-  ZoomableGroup,
-} from "react-simple-maps";
+import { memo, useMemo, useState } from "react";
+import dynamic from "next/dynamic";
 import type { Territory } from "@/hooks/use-territories";
 import { SIDO_SHORT } from "@/data/regions";
 
 const TOPO_URL = "/korea-topo.json";
-const TOPO_OBJECT_KEY = "skorea_provinces_2018_geo";
 
 /** TopoJSON 이름 → regions.ts 이름 매핑 (변경된 행정구역명) */
 const TOPO_NAME_MAP: Record<string, string> = {
   "강원도": "강원특별자치도",
   "전라북도": "전북특별자치도",
-};
-
-/** regions.ts 이름 → TopoJSON 이름 (역방향) */
-const REGION_TO_TOPO: Record<string, string> = {
-  "강원특별자치도": "강원도",
-  "전북특별자치도": "전라북도",
 };
 
 interface MapViewProps {
@@ -61,34 +49,49 @@ function getSidoColor(
 ): string {
   if (isSelected) return "#1e40af";
   if (!status || status.total === 0) {
-    return isHovered ? "#e2e8f0" : "#f1f5f9";
+    return isHovered ? "#dbeafe" : "#e8ecf2";
   }
   if (status.secured > 0) {
     return isHovered ? "#059669" : "#a7f3d0";
   }
   if (status.recruiting > 0) {
-    return isHovered ? "#1e40af" : "#bfdbfe";
+    return isHovered ? "#1e40af" : "#93c5fd";
   }
-  return isHovered ? "#e2e8f0" : "#f1f5f9";
+  return isHovered ? "#dbeafe" : "#e8ecf2";
 }
+
+/** Dynamically import react-simple-maps to avoid SSR issues */
+const ComposableMap = dynamic(
+  () => import("react-simple-maps").then((m) => m.ComposableMap),
+  { ssr: false }
+);
+const Geographies = dynamic(
+  () => import("react-simple-maps").then((m) => m.Geographies),
+  { ssr: false }
+);
+const Geography = dynamic(
+  () => import("react-simple-maps").then((m) => m.Geography),
+  { ssr: false }
+);
 
 function MapViewInner({ territories, selectedSido, onSidoSelect, specialtyFilter }: MapViewProps) {
   const statusMap = useSidoStatusMap(territories, specialtyFilter);
+  const [hoveredSido, setHoveredSido] = useState<string | null>(null);
 
   return (
     <div className="relative w-full max-w-[700px] mx-auto">
       {/* Legend */}
       <div className="flex items-center justify-center gap-5 mb-4 text-[12px] font-semibold text-[var(--knock-text-muted)]">
         <div className="flex items-center gap-1.5">
-          <span className="w-3 h-3 rounded-sm" style={{ background: "#a7f3d0" }} />
+          <span className="w-3 h-3 rounded-sm" style={{ background: "#a7f3d0", border: "1px solid #6ee7b7" }} />
           확보됨
         </div>
         <div className="flex items-center gap-1.5">
-          <span className="w-3 h-3 rounded-sm" style={{ background: "#bfdbfe" }} />
+          <span className="w-3 h-3 rounded-sm" style={{ background: "#93c5fd", border: "1px solid #60a5fa" }} />
           모집 중
         </div>
         <div className="flex items-center gap-1.5">
-          <span className="w-3 h-3 rounded-sm" style={{ background: "#f1f5f9" }} />
+          <span className="w-3 h-3 rounded-sm" style={{ background: "#e8ecf2", border: "1px solid #cbd5e1" }} />
           비어있음
         </div>
       </div>
@@ -103,53 +106,52 @@ function MapViewInner({ territories, selectedSido, onSidoSelect, specialtyFilter
         height={700}
         style={{ width: "100%", height: "auto" }}
       >
-        <ZoomableGroup>
-          <Geographies geography={TOPO_URL} parseGeographies={(geos) => geos}>
-            {({ geographies }) =>
-              geographies.map((geo) => {
-                const topoName = geo.properties.name as string;
-                const regionName = getRegionName(topoName);
-                const status = statusMap[regionName];
-                const isSelected = selectedSido === regionName;
-                const shortName = SIDO_SHORT[regionName] ?? regionName;
+        <Geographies geography={TOPO_URL}>
+          {({ geographies }: { geographies: Array<{ rsmKey: string; properties: Record<string, unknown> }> }) =>
+            geographies.map((geo) => {
+              const topoName = geo.properties.name as string;
+              const regionName = getRegionName(topoName);
+              const status = statusMap[regionName];
+              const isSelected = selectedSido === regionName;
+              const isHovered = hoveredSido === regionName;
 
-                return (
-                  <Geography
-                    key={geo.rsmKey}
-                    geography={geo}
-                    onClick={() => onSidoSelect(regionName)}
-                    style={{
-                      default: {
-                        fill: getSidoColor(status, isSelected, false),
-                        stroke: "#cbd5e1",
-                        strokeWidth: 0.8,
-                        cursor: "pointer",
-                        outline: "none",
-                        transition: "fill 0.2s",
-                      },
-                      hover: {
-                        fill: getSidoColor(status, isSelected, true),
-                        stroke: "#94a3b8",
-                        strokeWidth: 1.2,
-                        cursor: "pointer",
-                        outline: "none",
-                      },
-                      pressed: {
-                        fill: "#1e40af",
-                        stroke: "#1e3a8a",
-                        strokeWidth: 1.5,
-                        outline: "none",
-                      },
-                    }}
-                  />
-                );
-              })
-            }
-          </Geographies>
-        </ZoomableGroup>
+              return (
+                <Geography
+                  key={geo.rsmKey}
+                  geography={geo}
+                  onClick={() => onSidoSelect(regionName)}
+                  onMouseEnter={() => setHoveredSido(regionName)}
+                  onMouseLeave={() => setHoveredSido(null)}
+                  style={{
+                    default: {
+                      fill: getSidoColor(status, isSelected, false),
+                      stroke: "#94a3b8",
+                      strokeWidth: 0.8,
+                      cursor: "pointer",
+                      outline: "none",
+                    },
+                    hover: {
+                      fill: getSidoColor(status, isSelected, true),
+                      stroke: "#64748b",
+                      strokeWidth: 1.2,
+                      cursor: "pointer",
+                      outline: "none",
+                    },
+                    pressed: {
+                      fill: "#1e40af",
+                      stroke: "#1e3a8a",
+                      strokeWidth: 1.5,
+                      outline: "none",
+                    },
+                  }}
+                />
+              );
+            })
+          }
+        </Geographies>
       </ComposableMap>
 
-      {/* Overlay labels - positioned via CSS for key regions */}
+      {/* Overlay labels */}
       <div className="absolute inset-0 pointer-events-none" aria-hidden>
         <SidoLabels statusMap={statusMap} selectedSido={selectedSido} />
       </div>
@@ -198,14 +200,14 @@ function SidoLabels({
             style={{ top: l.top, left: l.left, transform: "translate(-50%, -50%)" }}
           >
             <span
-              className={`text-[11px] font-bold leading-none ${
-                isSelected ? "text-white" : "text-[var(--knock-text)]"
+              className={`text-[11px] font-bold leading-none drop-shadow-sm ${
+                isSelected ? "text-white" : "text-[var(--knock-text-bright)]"
               }`}
             >
               {l.short}
             </span>
             {count > 0 && (
-              <span className="text-[9px] font-bold text-[var(--knock-primary)] bg-white/80 rounded-full px-1 mt-0.5">
+              <span className="text-[9px] font-bold text-[var(--knock-primary)] bg-white/90 rounded-full px-1.5 py-0.5 mt-0.5 shadow-sm">
                 {count}
               </span>
             )}
