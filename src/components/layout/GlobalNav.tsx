@@ -102,6 +102,7 @@ export function GlobalNav() {
   });
 
   return (
+    <>
     <header
       style={{
         position: "sticky",
@@ -330,25 +331,26 @@ export function GlobalNav() {
           {mobileOpen ? <X style={{ width: 24, height: 24 }} /> : <Menu style={{ width: 24, height: 24 }} />}
         </button>
       </nav>
+    </header>
 
-      {/* ── Mobile menu ── */}
-      {mobileOpen && (
-        <div
-          className="md:hidden"
-          style={{
-            position: "fixed",
-            top: 56,
-            left: 0,
-            right: 0,
-            bottom: 0,
-            background: "#ffffff",
-            zIndex: 49,
-            overflowY: "auto",
-            padding: "24px 24px 40px",
-            display: "flex",
-            flexDirection: "column",
-          }}
-        >
+    {/* ── Mobile menu (outside header to avoid height clipping) ── */}
+    {mobileOpen && (
+      <div
+        className="md:hidden"
+        style={{
+          position: "fixed",
+          top: 56,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          background: "#ffffff",
+          zIndex: 99,
+          overflowY: "auto",
+          padding: "24px 24px 40px",
+          display: "flex",
+          flexDirection: "column",
+        }}
+      >
           {/* 홈 */}
           <Link
             href="/"
@@ -456,6 +458,6 @@ export function GlobalNav() {
           </a>
         </div>
       )}
-    </header>
+    </>
   );
 }
