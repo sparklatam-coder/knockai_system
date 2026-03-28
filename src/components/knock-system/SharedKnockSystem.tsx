@@ -108,7 +108,7 @@ function StatusPill({ status }: { status: NodeStatus }) {
         gap: 4,
         padding: "2px 8px",
         borderRadius: 99,
-        fontSize: 10,
+        fontSize: 11,
         fontWeight: 600,
         background: SB[status],
         color: SC[status],

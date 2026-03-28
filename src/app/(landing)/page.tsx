@@ -327,7 +327,7 @@ export default function LandingPage() {
                             transitionDelay: `${i * 80}ms`,
                           }}
                         />
-                        <span className="text-[10px] text-muted-foreground mt-2 hidden md:block">{d.date}</span>
+                        <span className="text-[11px] text-muted-foreground mt-2 hidden md:block">{d.date}</span>
                       </div>
                     );
                   })}

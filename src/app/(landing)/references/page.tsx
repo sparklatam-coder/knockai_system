@@ -96,7 +96,7 @@ function TierBadge({ tier, extra }: { tier: "basic" | "premium" | "platinum"; ex
   return (
     <span style={{
       display: "inline-flex", alignItems: "center", gap: 4,
-      padding: "3px 10px", borderRadius: 6, fontSize: 11, fontWeight: 800, letterSpacing: 0.5,
+      padding: "3px 10px", borderRadius: 6, fontSize: 12, fontWeight: 800, letterSpacing: 0.5,
       color: c.color,
       background: c.bg,
       border: c.border || "none",
@@ -136,9 +136,9 @@ function NaverLink({ url }: { url: string }) {
 function StatBox({ label, value, sub, color }: { label: string; value: string; sub?: string; color?: string }) {
   return (
     <div style={{ background: T.gw, borderRadius: 10, padding: "10px 12px" }}>
-      <div style={{ fontSize: 10, color: T.muted }}>{label}</div>
+      <div style={{ fontSize: 11, color: T.muted }}>{label}</div>
       <div style={{ fontSize: 14, fontWeight: 700, color: color || T.text, marginTop: 2 }}>{value}</div>
-      {sub && <div style={{ fontSize: 10, color: T.green, marginTop: 1 }}>{sub}</div>}
+      {sub && <div style={{ fontSize: 11, color: T.green, marginTop: 1 }}>{sub}</div>}
     </div>
   );
 }
@@ -395,7 +395,7 @@ function AutomationChecklist({ features }: { features: Array<{ label: string; do
           <span style={{ fontSize: 13, fontWeight: 600, color: T.text }}>{f.label}</span>
           {f.done && (
             <span style={{
-              marginLeft: "auto", fontSize: 10, fontWeight: 700,
+              marginLeft: "auto", fontSize: 11, fontWeight: 700,
               color: T.green, background: `${T.green}15`,
               padding: "2px 8px", borderRadius: 4,
             }}>완료</span>
@@ -446,7 +446,7 @@ function YouTubeSection({ yt }: { yt: NonNullable<ClientCase["youtube"]> }) {
                   display: "flex", alignItems: "center", justifyContent: "center", fontSize: 20,
                 }}>{s.icon}</div>
                 <div style={{ fontSize: 13, fontWeight: 800, color: s.color }}>{s.step}</div>
-                <div style={{ fontSize: 10, color: T.muted }}>{s.desc}</div>
+                <div style={{ fontSize: 11, color: T.muted }}>{s.desc}</div>
               </div>
               {i < 2 && (
                 <span style={{ fontSize: 18, color: T.dim, margin: "0 8px 16px" }}>→</span>
@@ -494,7 +494,7 @@ function YouTubeSection({ yt }: { yt: NonNullable<ClientCase["youtube"]> }) {
                   display: "flex", alignItems: "center", justifyContent: "center", fontSize: 18,
                 }}>{s.icon}</div>
                 <div style={{ fontSize: 12, fontWeight: 800, color: s.color }}>{s.step}</div>
-                <div style={{ fontSize: 10, color: T.muted }}>{s.desc}</div>
+                <div style={{ fontSize: 11, color: T.muted }}>{s.desc}</div>
               </div>
               {i < 2 && (
                 <span style={{ fontSize: 18, color: T.dim, margin: "0 8px 16px" }}>→</span>
@@ -813,7 +813,7 @@ function CaseCard({ c }: { c: ClientCase }) {
                       {c.takeoverIndex != null && i === c.takeoverIndex && (
                         <div style={{ gridColumn: "1 / -1", display: "flex", alignItems: "center", gap: 8, margin: "6px 0", padding: "4px 0" }}>
                           <span style={{ flex: 1, height: 1, background: `${T.accent}30` }} />
-                          <span style={{ fontSize: 10, fontWeight: 700, color: T.accent, whiteSpace: "nowrap" }}>↓ 타 업체 운영 기간 (5~8위 오르락 내리락)</span>
+                          <span style={{ fontSize: 11, fontWeight: 700, color: T.accent, whiteSpace: "nowrap" }}>↓ 타 업체 운영 기간 (5~8위 오르락 내리락)</span>
                           <span style={{ flex: 1, height: 1, background: `${T.accent}30` }} />
                         </div>
                       )}
@@ -1049,7 +1049,7 @@ export default function ReferencesPage() {
       {/* ── CTA ── */}
       <section className="section-padding relative">
         <div className="absolute inset-0 pointer-events-none">
-          <div className="absolute bottom-0 left-1/2 -translate-x-1/2 w-[600px] h-[300px] bg-primary/10 rounded-full blur-[150px]" />
+          <div className="absolute bottom-0 left-1/2 -translate-x-1/2 w-[min(600px,100vw)] h-[300px] bg-primary/10 rounded-full blur-[150px]" />
         </div>
         <div className="container mx-auto px-6 relative">
           <div className="content-max text-center space-y-8">

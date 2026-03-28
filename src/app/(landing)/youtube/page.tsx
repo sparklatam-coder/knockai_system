@@ -468,7 +468,7 @@ export default function YouTubePage() {
       {/* Final CTA */}
       <section className="section-padding relative">
         <div className="absolute inset-0 pointer-events-none">
-          <div className="absolute bottom-0 left-1/2 -translate-x-1/2 w-[600px] h-[300px] bg-primary/10 rounded-full blur-[150px]" />
+          <div className="absolute bottom-0 left-1/2 -translate-x-1/2 w-[min(600px,100vw)] h-[300px] bg-primary/10 rounded-full blur-[150px]" />
         </div>
         <div className="container mx-auto px-6 relative">
           <div className="content-max text-center space-y-8">
