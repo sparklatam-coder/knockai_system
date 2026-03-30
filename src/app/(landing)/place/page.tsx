@@ -16,7 +16,7 @@ export default function PlacePage() {
       <GlobalNav />
 
       {/* Hero */}
-      <section className="relative pt-32 pb-20 min-h-screen flex items-center">
+      <section className="relative pt-20 md:pt-32 pb-12 md:pb-20 min-h-[85vh] md:min-h-screen flex items-center">
         <DoorKnockHero />
         <div className="container mx-auto px-6 relative">
           <div className="content-max text-center">

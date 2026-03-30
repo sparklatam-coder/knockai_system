@@ -93,10 +93,13 @@ export function DoorKnockHero({ enableScrollOpen = false, onProgress }: DoorKnoc
     }
     const w = () => canvas.offsetWidth;
     const h = () => canvas.offsetHeight;
-    const particles: Particle[] = Array.from({ length: 30 }, () => ({
+    const isMobileView = w() < 768;
+    const count = isMobileView ? 45 : 30;
+    const particles: Particle[] = Array.from({ length: count }, () => ({
       x: Math.random() * w(), y: Math.random() * h(),
       vx: (Math.random() - 0.5) * 0.2, vy: -Math.random() * 0.3 - 0.1,
-      size: Math.random() * 2 + 0.5, opacity: Math.random() * 0.15 + 0.05,
+      size: isMobileView ? Math.random() * 3 + 1 : Math.random() * 2 + 0.5,
+      opacity: isMobileView ? Math.random() * 0.25 + 0.1 : Math.random() * 0.15 + 0.05,
       hue: Math.random() > 0.5 ? 224 : 210,
     }));
     const animate = () => {
@@ -129,6 +132,15 @@ export function DoorKnockHero({ enableScrollOpen = false, onProgress }: DoorKnoc
           radial-gradient(ellipse 60% 50% at 50% 40%, hsla(224, 76%, 40%, 0.04) 0%, transparent 70%),
           radial-gradient(ellipse 40% 60% at 30% 60%, hsla(210, 100%, 60%, 0.03) 0%, transparent 70%),
           radial-gradient(ellipse 40% 40% at 70% 30%, hsla(224, 76%, 50%, 0.02) 0%, transparent 70%)
+        `,
+      }} />
+
+      {/* Mobile-only enhanced glow */}
+      <div className="absolute inset-0 md:hidden" style={{
+        background: `
+          radial-gradient(ellipse 80% 50% at 50% 45%, hsla(224, 76%, 48%, 0.10) 0%, transparent 65%),
+          radial-gradient(ellipse 60% 40% at 30% 65%, hsla(210, 100%, 60%, 0.07) 0%, transparent 60%),
+          radial-gradient(ellipse 50% 50% at 75% 35%, hsla(224, 76%, 55%, 0.06) 0%, transparent 60%)
         `,
       }} />
 
