@@ -67,7 +67,7 @@ export function MessagingView({ clientId, clientName }: MessagingViewProps) {
   const {
     patients, templates, campaigns, logs,
     loading, error,
-    uploadCSV, createTemplate, createCampaign, updateCampaign,
+    uploadCSV, createTemplate, createCampaign, updateCampaign, sendCampaign,
   } = useMessaging(clientId);
 
   const [tab, setTab] = useState<"overview"|"patients"|"templates"|"campaigns"|"history">("overview");
@@ -85,6 +85,7 @@ export function MessagingView({ clientId, clientName }: MessagingViewProps) {
   const [newCampGroup, setNewCampGroup] = useState("all");
   const [newCampDate, setNewCampDate] = useState("");
   const [campSaving, setCampSaving] = useState(false);
+  const [sendingId, setSendingId] = useState<string | null>(null);
 
   const friends = patients.filter(p => p.is_channel_friend).length;
   const groups = useMemo(() => ({
@@ -136,6 +137,38 @@ export function MessagingView({ clientId, clientName }: MessagingViewProps) {
     setCampSaving(false);
     setShowNewCampaign(false);
     setNewCampName("");
+  };
+
+  const handleSendCampaign = async (campaign: MsgCampaign) => {
+    // 대상 그룹에 맞는 환자 필터
+    const targetPatients = campaign.target_group === "all"
+      ? patients
+      : campaign.target_group === "friends"
+        ? patients.filter(p => p.is_channel_friend)
+        : patients.filter(p => p.patient_group === campaign.target_group);
+
+    if (targetPatients.length === 0) {
+      alert("대상 환자가 없습니다.");
+      return;
+    }
+
+    if (!confirm(`${targetPatients.length}명에게 발송하시겠습니까?`)) return;
+
+    setSendingId(campaign.id);
+    const tpl = templates.find(t => t.id === campaign.template_id);
+    const result = await sendCampaign(
+      campaign.id,
+      targetPatients.map(p => ({ patient_id: p.id, phone: p.phone, name: p.name })),
+      tpl?.name ?? campaign.name,
+      campaign.type,
+    );
+
+    if (result.error) {
+      alert(`발송 실패: ${result.error}`);
+    } else {
+      alert(`${targetPatients.length}명 발송 완료!`);
+    }
+    setSendingId(null);
   };
 
   if (loading) return <div style={{ padding: 40, textAlign: "center", color: "var(--tsub)" }}>메시징 데이터 로딩 중...</div>;
@@ -411,7 +444,12 @@ export function MessagingView({ clientId, clientName }: MessagingViewProps) {
                   <div style={{ fontSize: 11, color: "var(--tsub)" }}>{c.target_count}명 · {c.scheduled_at ? new Date(c.scheduled_at).toLocaleDateString("ko-KR", { month: "numeric", day: "numeric" }) : "미정"}</div>
                 </div>
               </div>
-              <StatusChip status={c.status} />
+              <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                <StatusChip status={c.status} />
+                {c.status !== "sent" && (
+                  <button type="button" onClick={() => void handleSendCampaign(c)} disabled={sendingId === c.id} style={{ fontSize: 11, fontWeight: 700, padding: "4px 12px", borderRadius: 6, border: "none", background: "var(--gP)", cursor: "pointer", color: "#fff", opacity: sendingId === c.id ? 0.5 : 1 }}>{sendingId === c.id ? "발송중..." : "발송"}</button>
+                )}
+              </div>
             </div>
           ))}
         </>
@@ -429,6 +467,9 @@ export function MessagingView({ clientId, clientName }: MessagingViewProps) {
               </div>
               <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
                 <StatusChip status={c.status} />
+                {c.status !== "sent" && (
+                  <button type="button" onClick={() => void handleSendCampaign(c)} disabled={sendingId === c.id} style={{ fontSize: 11, fontWeight: 700, padding: "4px 12px", borderRadius: 6, border: "none", background: "var(--gP)", cursor: "pointer", color: "#fff", opacity: sendingId === c.id ? 0.5 : 1 }}>{sendingId === c.id ? "발송중..." : "발송"}</button>
+                )}
               </div>
             </div>
           ))}
