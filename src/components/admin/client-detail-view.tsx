@@ -642,12 +642,26 @@ function ClientEditModal({
 
   const set = (key: string, value: string) => setForm((p) => ({ ...p, [key]: value }));
 
+  const applyLogoFile = (file: File) => {
+    if (!file.type.startsWith("image/")) { setErr("이미지 파일만 가능합니다."); return; }
+    if (file.size > 2 * 1024 * 1024) { setErr("로고 파일은 2MB 이하만 가능합니다."); return; }
+    setLogoFile(file);
+    setLogoPreview(URL.createObjectURL(file));
+  };
+
   const handleLogoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0] ?? null;
-    if (file) {
-      if (file.size > 2 * 1024 * 1024) { setErr("로고 파일은 2MB 이하만 가능합니다."); return; }
-      setLogoFile(file);
-      setLogoPreview(URL.createObjectURL(file));
+    if (file) applyLogoFile(file);
+  };
+
+  const handleLogoPaste = (e: React.ClipboardEvent) => {
+    const items = e.clipboardData?.items;
+    if (!items) return;
+    for (let i = 0; i < items.length; i++) {
+      if (items[i].type.startsWith("image/")) {
+        const file = items[i].getAsFile();
+        if (file) { applyLogoFile(file); e.preventDefault(); return; }
+      }
     }
   };
 
@@ -686,9 +700,17 @@ function ClientEditModal({
 
         <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
           {/* Logo upload */}
-          <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
+          {/* eslint-disable-next-line jsx-a11y/no-static-element-interactions */}
+          <div
+            style={{ display: "flex", alignItems: "center", gap: 14 }}
+            onPaste={handleLogoPaste}
+            onDrop={(e) => { e.preventDefault(); const file = e.dataTransfer.files?.[0]; if (file) applyLogoFile(file); }}
+            onDragOver={(e) => e.preventDefault()}
+          >
             <div
               onClick={() => logoInputRef.current?.click()}
+              tabIndex={0}
+              onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") logoInputRef.current?.click(); }}
               style={{
                 width: 64, height: 64, borderRadius: 14, flexShrink: 0,
                 border: "2px dashed hsl(214 32% 85%)", cursor: "pointer",
@@ -704,7 +726,7 @@ function ClientEditModal({
             <div>
               <p style={{ ...labelStyle, marginBottom: 2 }}>로고</p>
               <p style={{ fontSize: 11, color: "hsl(215 16% 62%)", margin: 0 }}>
-                클릭하여 변경 (2MB 이하 이미지)
+                클릭, 붙여넣기(Ctrl+V), 또는 드래그 (2MB 이하)
               </p>
             </div>
             <input ref={logoInputRef} type="file" accept="image/*" onChange={handleLogoChange} style={{ display: "none" }} />
