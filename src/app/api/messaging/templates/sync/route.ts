@@ -60,6 +60,13 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "솔라피 API 호출 실패", detail: String(err) }, { status: 502 });
   }
 
+  // 해당 병원 PFID로 필터링
+  const pfId = client.solapi_pfid;
+  const beforeFilter = solapiTemplates.length;
+  solapiTemplates = solapiTemplates.filter(
+    (t) => !pfId || (t as unknown as Record<string, unknown>).pfId === pfId || (t as unknown as Record<string, unknown>).channelId === pfId,
+  );
+
   // 템플릿을 못 가져온 경우 디버깅용 rawResponse 반환
   if (solapiTemplates.length === 0) {
     return NextResponse.json({
