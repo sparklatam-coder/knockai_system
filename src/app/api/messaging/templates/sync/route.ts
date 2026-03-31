@@ -39,7 +39,8 @@ export async function POST(request: Request) {
   let solapiTemplates: SolapiTemplate[] = [];
   let rawResponse: unknown = null;
   try {
-    const res = await fetch(`https://api.solapi.com/kakao/v2/templates?pfId=${client.solapi_pfid}`, {
+    // pfId 없이 전체 조회 후 필터링
+    const res = await fetch("https://api.solapi.com/kakao/v2/templates", {
       headers: { Authorization: authHeader },
     });
     rawResponse = await res.json();
