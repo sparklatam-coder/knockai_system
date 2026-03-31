@@ -5,7 +5,7 @@ export async function getSolapiAuthHeader(): Promise<string | null> {
   const apiSecret = process.env.SOLAPI_API_SECRET;
   if (!apiKey || !apiSecret) return null;
 
-  const timestamp = Date.now().toString();
+  const timestamp = new Date().toISOString();
   const salt = crypto.randomUUID();
   const encoder = new TextEncoder();
   const key = await crypto.subtle.importKey(
