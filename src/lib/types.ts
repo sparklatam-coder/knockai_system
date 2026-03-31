@@ -46,6 +46,8 @@ export interface Client {
   auth_user_id: string | null;
   logo_url: string | null;
   memo: string | null;
+  solapi_pfid: string | null;
+  solapi_sender_number: string | null;
   created_at: string;
   updated_at: string;
 }

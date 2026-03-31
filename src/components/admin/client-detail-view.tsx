@@ -634,6 +634,8 @@ function ClientEditModal({
     package_tier: client.package_tier,
     contract_start: client.contract_start ?? "",
     memo: client.memo ?? "",
+    solapi_pfid: client.solapi_pfid ?? "",
+    solapi_sender_number: client.solapi_sender_number ?? "",
   });
   const [logoFile, setLogoFile] = useState<File | null>(null);
   const [logoPreview, setLogoPreview] = useState<string | null>(client.logo_url);
@@ -786,6 +788,20 @@ function ClientEditModal({
               onChange={(e) => set("memo", e.target.value)}
               placeholder="내부 메모"
             />
+          </div>
+
+          <div style={{ borderTop: "1px solid hsl(214 32% 91%)", paddingTop: 14, marginTop: 6 }}>
+            <p style={{ ...labelStyle, fontSize: 13, marginBottom: 10 }}>솔라피 (메시징)</p>
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
+              <div>
+                <p style={labelStyle}>카카오 채널 PFID</p>
+                <input style={fieldStyle} value={form.solapi_pfid} onChange={(e) => set("solapi_pfid", e.target.value)} placeholder="KA01PF..." />
+              </div>
+              <div>
+                <p style={labelStyle}>발신번호</p>
+                <input style={fieldStyle} value={form.solapi_sender_number} onChange={(e) => set("solapi_sender_number", e.target.value)} placeholder="0312345678" />
+              </div>
+            </div>
           </div>
         </div>
 

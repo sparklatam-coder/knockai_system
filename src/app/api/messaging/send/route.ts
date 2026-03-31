@@ -24,13 +24,24 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "수신자가 없습니다." }, { status: 400 });
   }
 
+  // 병원별 솔라피 설정 조회
+  const { data: client } = await adminClient
+    .from("clients")
+    .select("solapi_pfid, solapi_sender_number")
+    .eq("id", body.client_id)
+    .single();
+
   const apiKey = process.env.SOLAPI_API_KEY;
   const apiSecret = process.env.SOLAPI_API_SECRET;
-  const pfId = process.env.SOLAPI_PFID;
-  const senderNumber = process.env.SOLAPI_SENDER_NUMBER;
+  const pfId = client?.solapi_pfid || process.env.SOLAPI_PFID;
+  const senderNumber = client?.solapi_sender_number || process.env.SOLAPI_SENDER_NUMBER;
 
   if (!apiKey || !apiSecret) {
     return NextResponse.json({ error: "솔라피 API 키가 설정되지 않았습니다." }, { status: 503 });
+  }
+
+  if (!pfId || !senderNumber) {
+    return NextResponse.json({ error: "이 병원의 카카오 채널(PFID) 또는 발신번호가 설정되지 않았습니다. 고객 정보 수정에서 설정해주세요." }, { status: 400 });
   }
 
   // Build messages for solapi

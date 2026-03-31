@@ -109,6 +109,8 @@ export async function PATCH(request: Request, context: RouteContext) {
   if (typeof body.contact_email === "string") updates.contact_email = body.contact_email.trim() || null;
   if (typeof body.memo === "string") updates.memo = body.memo.trim() || null;
   if (typeof body.contract_start === "string") updates.contract_start = body.contract_start.trim() || null;
+  if (typeof body.solapi_pfid === "string") updates.solapi_pfid = body.solapi_pfid.trim() || null;
+  if (typeof body.solapi_sender_number === "string") updates.solapi_sender_number = body.solapi_sender_number.trim() || null;
 
   if (typeof body.package_tier === "string" && VALID_TIERS.includes(body.package_tier as PackageTier)) {
     updates.package_tier = body.package_tier;
