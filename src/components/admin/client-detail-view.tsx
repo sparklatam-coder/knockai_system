@@ -8,6 +8,7 @@ import { useAuth } from "@/hooks/use-auth";
 import { HospitalLoadingScreen } from "@/components/HospitalLoadingScreen";
 import type { ActivityLog, AuthRole, Client, GuideLink, LogType, NodeKey, NodeRecord, NodeStatus, PackageTier, SubNode } from "@/lib/types";
 import { GuidePanel } from "@/components/admin/guide-panel";
+import { MessagingView } from "@/components/messaging/messaging-view";
 
 /* ── constants ──────────────────────────────────────── */
 const STATUS_OPTIONS: { value: NodeStatus; label: string; color: string; bg: string }[] = [
@@ -817,6 +818,7 @@ export function ClientDetailView({ clientId }: { clientId: string }) {
   const [pendingChanges, setPendingChanges] = useState<PendingChanges>(EMPTY_PENDING);
   const [isSaving, setIsSaving] = useState(false);
   const [saveSuccess, setSaveSuccess] = useState(false);
+  const [activeTab, setActiveTab] = useState<"dashboard" | "messaging">("dashboard");
   const [editModalOpen, setEditModalOpen] = useState(false);
   const [avatarUploading, setAvatarUploading] = useState(false);
   const avatarInputRef = useRef<HTMLInputElement>(null);
@@ -1141,6 +1143,30 @@ export function ClientDetailView({ clientId }: { clientId: string }) {
         </div>
       </section>
 
+      {/* ── Tab switcher ── */}
+      <div style={{ display: "flex", gap: 4, padding: "0 0 8px", borderBottom: "1px solid hsl(214 32% 91%)", marginBottom: 16 }}>
+        {(["dashboard", "messaging"] as const).map((tab) => (
+          <button
+            key={tab}
+            type="button"
+            onClick={() => setActiveTab(tab)}
+            style={{
+              padding: "8px 20px", fontSize: 13, fontWeight: activeTab === tab ? 700 : 500,
+              borderRadius: 8, cursor: "pointer", transition: "all 0.15s",
+              border: activeTab === tab ? "1px solid hsl(224 76% 85%)" : "1px solid transparent",
+              background: activeTab === tab ? "hsl(224 76% 96%)" : "transparent",
+              color: activeTab === tab ? "hsl(224 76% 40%)" : "hsl(215 16% 52%)",
+            }}
+          >
+            {tab === "dashboard" ? "대시보드" : "메시징"}
+          </button>
+        ))}
+      </div>
+
+      {activeTab === "messaging" ? (
+        <MessagingView clientId={clientId} clientName={data.client.name} />
+      ) : (
+      <>
       {/* ── Node cards ── */}
       <section className="apple-node-grid">
         {sortedNodes.flatMap((node) => {
@@ -1238,6 +1264,9 @@ export function ClientDetailView({ clientId }: { clientId: string }) {
           </ul>
         </div>
       </section>
+
+      </>
+      )}
 
       {/* ── Global floating save toast — hidden for client ── */}
       {role !== "client" && (hasChanges || saveSuccess) && (
