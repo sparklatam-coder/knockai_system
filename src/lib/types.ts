@@ -125,3 +125,68 @@ export interface ClientDashboardData {
   subNodes: SubNode[];
   activityLogs: ActivityLog[];
 }
+
+/* ── Messaging ── */
+
+export type MsgType = "alimtalk" | "friendtalk";
+export type MsgTemplateStatus = "draft" | "review" | "approved" | "rejected";
+export type MsgCampaignStatus = "draft" | "scheduled" | "sending" | "sent" | "cancelled";
+export type MsgLogStatus = "success" | "sms_fallback" | "fail";
+export type PatientGroup = "6m" | "1y" | "2y" | "2y+";
+
+export interface MsgPatient {
+  id: string;
+  client_id: string;
+  name: string;
+  phone: string;
+  last_visit: string | null;
+  treatment: string | null;
+  is_channel_friend: boolean;
+  patient_group: PatientGroup | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface MsgTemplate {
+  id: string;
+  client_id: string;
+  name: string;
+  type: MsgType;
+  subtype: string | null;
+  status: MsgTemplateStatus;
+  body: string;
+  button_name: string | null;
+  button_url: string | null;
+  solapi_template_id: string | null;
+  created_at: string;
+}
+
+export interface MsgCampaign {
+  id: string;
+  client_id: string;
+  name: string;
+  template_id: string | null;
+  type: MsgType;
+  target_group: string | null;
+  target_count: number;
+  scheduled_at: string | null;
+  status: MsgCampaignStatus;
+  wave: number | null;
+  sent_count: number;
+  success_count: number;
+  fail_count: number;
+  created_at: string;
+}
+
+export interface MsgLog {
+  id: string;
+  client_id: string;
+  campaign_id: string | null;
+  patient_id: string | null;
+  type: string;
+  template_name: string | null;
+  status: MsgLogStatus;
+  solapi_message_id: string | null;
+  sent_at: string;
+  patient?: MsgPatient;
+}
