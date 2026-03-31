@@ -818,6 +818,17 @@ export function ClientDetailView({ clientId }: { clientId: string }) {
   const [isSaving, setIsSaving] = useState(false);
   const [saveSuccess, setSaveSuccess] = useState(false);
   const [editModalOpen, setEditModalOpen] = useState(false);
+  const [avatarUploading, setAvatarUploading] = useState(false);
+  const avatarInputRef = useRef<HTMLInputElement>(null);
+
+  const handleAvatarFile = async (file: File) => {
+    if (!file.type.startsWith("image/")) return;
+    if (file.size > 2 * 1024 * 1024) return;
+    setAvatarUploading(true);
+    await updateClient({ name: data?.client.name ?? "" }, file);
+    setAvatarUploading(false);
+  };
+
   const [pwModalOpen, setPwModalOpen] = useState(false);
   const [pwValue, setPwValue] = useState("");
   const [pwConfirm, setPwConfirm] = useState("");
@@ -957,10 +968,42 @@ export function ClientDetailView({ clientId }: { clientId: string }) {
       <section>
         <div className="apple-info-card">
           <div className="apple-info-header">
-            <div className="apple-info-avatar">
+            {/* eslint-disable-next-line jsx-a11y/no-static-element-interactions */}
+            <div
+              className="apple-info-avatar"
+              style={{ cursor: isClient ? undefined : "pointer", position: "relative", opacity: avatarUploading ? 0.5 : 1 }}
+              onClick={() => { if (!isClient) avatarInputRef.current?.click(); }}
+              onPaste={(e) => {
+                if (isClient) return;
+                const items = e.clipboardData?.items;
+                if (!items) return;
+                for (let i = 0; i < items.length; i++) {
+                  if (items[i].type.startsWith("image/")) {
+                    const file = items[i].getAsFile();
+                    if (file) { void handleAvatarFile(file); e.preventDefault(); return; }
+                  }
+                }
+              }}
+              onDrop={(e) => {
+                if (isClient) return;
+                e.preventDefault();
+                const file = e.dataTransfer.files?.[0];
+                if (file) void handleAvatarFile(file);
+              }}
+              onDragOver={(e) => { if (!isClient) e.preventDefault(); }}
+              tabIndex={isClient ? undefined : 0}
+              onKeyDown={(e) => { if (!isClient && (e.key === "Enter" || e.key === " ")) avatarInputRef.current?.click(); }}
+            >
               {data.client.logo_url
                 ? <img src={data.client.logo_url} alt="" style={{ width: "100%", height: "100%", objectFit: "cover", borderRadius: "inherit" }} />
                 : data.client.name.slice(0, 1)}
+              <input
+                ref={avatarInputRef}
+                type="file"
+                accept="image/*"
+                style={{ display: "none" }}
+                onChange={(e) => { const f = e.target.files?.[0]; if (f) void handleAvatarFile(f); e.target.value = ""; }}
+              />
             </div>
             <div style={{ flex: 1 }}>
               <h2 className="apple-info-name">{data.client.name}</h2>
