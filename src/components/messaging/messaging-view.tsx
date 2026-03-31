@@ -325,10 +325,13 @@ export function MessagingView({ clientId, clientName }: MessagingViewProps) {
     setSyncing(true);
     const result = await syncTemplates();
     setSyncing(false);
+
     if (result.error) {
       alert(`동기화 실패: ${result.error}`);
+    } else if (result.total === 0 && result.debug) {
+      alert(`솔라피에서 템플릿을 찾지 못했습니다.\n\n디버깅 정보:\n${JSON.stringify(result.debug, null, 2)}`);
     } else {
-      alert(`솔라피 동기화 완료! 업데이트: ${result.synced ?? 0}건, 새로 추가: ${result.created ?? 0}건`);
+      alert(`솔라피 동기화 완료! 총 ${result.total}건 중 업데이트: ${result.synced ?? 0}건, 새로 추가: ${result.created ?? 0}건`);
     }
   };
 

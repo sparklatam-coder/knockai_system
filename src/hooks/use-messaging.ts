@@ -18,7 +18,7 @@ interface UseMessagingReturn {
   createCampaign: (camp: Partial<MsgCampaign>) => Promise<{ error: string | null }>;
   updateCampaign: (id: string, fields: Partial<MsgCampaign>) => Promise<{ error: string | null }>;
   sendCampaign: (campaignId: string, recipients: { patient_id: string; phone: string; name: string }[], templateName: string, type: string) => Promise<{ error: string | null }>;
-  syncTemplates: () => Promise<{ error: string | null; synced?: number; created?: number }>;
+  syncTemplates: () => Promise<{ error: string | null; synced?: number; created?: number; total?: number; debug?: unknown }>;
 }
 
 export function useMessaging(clientId: string): UseMessagingReturn {
@@ -192,10 +192,10 @@ export function useMessaging(clientId: string): UseMessagingReturn {
         method: "POST",
         headers: headers(),
       });
-      const json = await res.json() as { error?: string; synced?: number; created?: number };
+      const json = await res.json() as { error?: string; synced?: number; created?: number; total?: number; debug?: unknown };
       if (!res.ok) return { error: json.error ?? "동기화 실패" };
       await refresh();
-      return { error: null, synced: json.synced, created: json.created };
+      return { error: null, synced: json.synced, created: json.created, total: json.total, debug: json.debug };
     },
     [clientId, headers, refresh],
   );

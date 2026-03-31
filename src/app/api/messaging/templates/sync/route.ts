@@ -35,15 +35,39 @@ export async function POST(request: Request) {
   }
 
   // 솔라피에서 템플릿 목록 조회
-  let solapiTemplates: { templateId: string; name: string; content: string; status: string; buttons?: { name: string; linkMo?: string; linkPc?: string }[]; messageType?: string }[] = [];
+  type SolapiTemplate = { templateId: string; name: string; content: string; status: string; buttons?: { name: string; linkMo?: string; linkPc?: string }[]; messageType?: string };
+  let solapiTemplates: SolapiTemplate[] = [];
+  let rawResponse: unknown = null;
   try {
     const res = await fetch(`https://api.solapi.com/kakao/v2/templates?pfId=${client.solapi_pfid}`, {
       headers: { Authorization: authHeader },
     });
-    const json = await res.json() as { templateList?: typeof solapiTemplates };
-    solapiTemplates = json.templateList ?? [];
-  } catch {
-    return NextResponse.json({ error: "솔라피 API 호출 실패" }, { status: 502 });
+    rawResponse = await res.json();
+
+    // 솔라피 응답이 배열일 수도, { templateList: [] }일 수도 있음
+    if (Array.isArray(rawResponse)) {
+      solapiTemplates = rawResponse as SolapiTemplate[];
+    } else if (rawResponse && typeof rawResponse === "object") {
+      const obj = rawResponse as Record<string, unknown>;
+      if (Array.isArray(obj.templateList)) {
+        solapiTemplates = obj.templateList as SolapiTemplate[];
+      } else if (Array.isArray(obj.data)) {
+        solapiTemplates = obj.data as SolapiTemplate[];
+      }
+    }
+  } catch (err) {
+    return NextResponse.json({ error: "솔라피 API 호출 실패", detail: String(err) }, { status: 502 });
+  }
+
+  // 템플릿을 못 가져온 경우 디버깅용 rawResponse 반환
+  if (solapiTemplates.length === 0) {
+    return NextResponse.json({
+      success: true,
+      total: 0,
+      synced: 0,
+      created: 0,
+      debug: { pfId: client.solapi_pfid, rawResponse },
+    });
   }
 
   // DB의 기존 템플릿 조회
