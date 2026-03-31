@@ -818,7 +818,7 @@ export function ClientDetailView({ clientId }: { clientId: string }) {
   const [pendingChanges, setPendingChanges] = useState<PendingChanges>(EMPTY_PENDING);
   const [isSaving, setIsSaving] = useState(false);
   const [saveSuccess, setSaveSuccess] = useState(false);
-  const [activeTab, setActiveTab] = useState<"dashboard" | "messaging">("dashboard");
+  const [activeView, setActiveView] = useState<"marketing" | "messaging">("marketing");
   const [editModalOpen, setEditModalOpen] = useState(false);
   const [avatarUploading, setAvatarUploading] = useState(false);
   const avatarInputRef = useRef<HTMLInputElement>(null);
@@ -1143,29 +1143,37 @@ export function ClientDetailView({ clientId }: { clientId: string }) {
         </div>
       </section>
 
-      {/* ── Tab switcher ── */}
-      <div style={{ display: "flex", gap: 4, padding: "0 0 8px", borderBottom: "1px solid hsl(214 32% 91%)", marginBottom: 16 }}>
-        {(["dashboard", "messaging"] as const).map((tab) => (
-          <button
-            key={tab}
-            type="button"
-            onClick={() => setActiveTab(tab)}
-            style={{
-              padding: "8px 20px", fontSize: 13, fontWeight: activeTab === tab ? 700 : 500,
-              borderRadius: 8, cursor: "pointer", transition: "all 0.15s",
-              border: activeTab === tab ? "1px solid hsl(224 76% 85%)" : "1px solid transparent",
-              background: activeTab === tab ? "hsl(224 76% 96%)" : "transparent",
-              color: activeTab === tab ? "hsl(224 76% 40%)" : "hsl(215 16% 52%)",
-            }}
+      {/* ── View Toggle: 마케팅 현황 | 메시징 ── */}
+      <section style={{ marginBottom: 4 }}>
+        <div className="apple-seg" style={{ display: "inline-flex" }}>
+          <button type="button"
+            className={`apple-seg-btn${activeView === "marketing" ? " apple-seg-active" : ""}`}
+            onClick={() => setActiveView("marketing")}
+            style={activeView === "marketing" ? { background: "var(--accent-bg)", color: "var(--gP)", borderColor: "var(--accent-border)" } : {}}
           >
-            {tab === "dashboard" ? "대시보드" : "메시징"}
+            {activeView === "marketing" && <span style={{ width: 6, height: 6, borderRadius: "50%", background: "var(--gP)", display: "inline-block" }} />}
+            마케팅 현황
           </button>
-        ))}
-      </div>
+          <button type="button"
+            className={`apple-seg-btn${activeView === "messaging" ? " apple-seg-active" : ""}`}
+            onClick={() => setActiveView("messaging")}
+            style={activeView === "messaging" ? { background: "var(--accent-bg)", color: "var(--gP)", borderColor: "var(--accent-border)" } : {}}
+          >
+            {activeView === "messaging" && <span style={{ width: 6, height: 6, borderRadius: "50%", background: "var(--gP)", display: "inline-block" }} />}
+            💬 메시징
+          </button>
+        </div>
+      </section>
 
-      {activeTab === "messaging" ? (
-        <MessagingView clientId={clientId} clientName={data.client.name} />
-      ) : (
+      {/* ── Messaging View ── */}
+      {activeView === "messaging" && (
+        <section>
+          <MessagingView clientId={clientId} clientName={data.client.name} />
+        </section>
+      )}
+
+      {/* ── Marketing View (기존 코드) ── */}
+      {activeView === "marketing" && (
       <>
       {/* ── Node cards ── */}
       <section className="apple-node-grid">
