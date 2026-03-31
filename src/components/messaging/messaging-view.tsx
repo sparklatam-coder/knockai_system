@@ -67,7 +67,7 @@ export function MessagingView({ clientId, clientName }: MessagingViewProps) {
   const {
     patients, templates, campaigns, logs,
     loading, error,
-    uploadCSV, createTemplate, createCampaign, updateCampaign, sendCampaign,
+    uploadCSV, createTemplate, createCampaign, updateCampaign, sendCampaign, syncTemplates,
   } = useMessaging(clientId);
 
   const [tab, setTab] = useState<"overview"|"patients"|"templates"|"campaigns"|"history">("overview");
@@ -86,6 +86,7 @@ export function MessagingView({ clientId, clientName }: MessagingViewProps) {
   const [newCampDate, setNewCampDate] = useState("");
   const [campSaving, setCampSaving] = useState(false);
   const [sendingId, setSendingId] = useState<string | null>(null);
+  const [syncing, setSyncing] = useState(false);
 
   const friends = patients.filter(p => p.is_channel_friend).length;
   const groups = useMemo(() => ({
@@ -320,8 +321,26 @@ export function MessagingView({ clientId, clientName }: MessagingViewProps) {
   );
 
   /* ── Templates ── */
+  const handleSync = async () => {
+    setSyncing(true);
+    const result = await syncTemplates();
+    setSyncing(false);
+    if (result.error) {
+      alert(`동기화 실패: ${result.error}`);
+    } else {
+      alert(`솔라피 동기화 완료! 업데이트: ${result.synced ?? 0}건, 새로 추가: ${result.created ?? 0}건`);
+    }
+  };
+
   const renderTemplates = () => (
     <>
+      <div style={{ display: "flex", justifyContent: "flex-end", marginBottom: 12 }}>
+        <button type="button" onClick={() => void handleSync()} disabled={syncing} style={{
+          padding: "7px 16px", fontSize: 12, fontWeight: 600, borderRadius: 8,
+          border: "1px solid var(--border)", background: "var(--card)", cursor: "pointer", color: "var(--text)",
+          opacity: syncing ? 0.5 : 1,
+        }}>{syncing ? "동기화 중..." : "🔄 솔라피 동기화"}</button>
+      </div>
       {templates.length > 0 ? (
         <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
           {templates.map(t => (
