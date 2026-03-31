@@ -796,6 +796,31 @@ export function ClientDetailView({ clientId }: { clientId: string }) {
   const [isSaving, setIsSaving] = useState(false);
   const [saveSuccess, setSaveSuccess] = useState(false);
   const [editModalOpen, setEditModalOpen] = useState(false);
+  const [pwModalOpen, setPwModalOpen] = useState(false);
+  const [pwValue, setPwValue] = useState("");
+  const [pwConfirm, setPwConfirm] = useState("");
+  const [pwSaving, setPwSaving] = useState(false);
+  const [pwError, setPwError] = useState<string | null>(null);
+  const [pwSuccess, setPwSuccess] = useState(false);
+
+  const handleResetPassword = async () => {
+    setPwError(null);
+    if (pwValue.length < 8) { setPwError("비밀번호는 8자 이상이어야 합니다."); return; }
+    if (pwValue !== pwConfirm) { setPwError("비밀번호가 일치하지 않습니다."); return; }
+    setPwSaving(true);
+    try {
+      const res = await fetch(`/api/admin/clients/${clientId}/reset-password`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${session?.access_token ?? ""}` },
+        body: JSON.stringify({ password: pwValue }),
+      });
+      const json = await res.json();
+      if (!res.ok) { setPwError(json.error || "비밀번호 변경 실패"); setPwSaving(false); return; }
+      setPwSuccess(true);
+      setTimeout(() => { setPwModalOpen(false); setPwValue(""); setPwConfirm(""); setPwSuccess(false); }, 1500);
+    } catch { setPwError("네트워크 오류"); }
+    setPwSaving(false);
+  };
 
   const changedNodeCount = Object.keys(pendingChanges.nodes).length;
   const changedTaskCount = Object.keys(pendingChanges.tasks).length;
@@ -920,11 +945,20 @@ export function ClientDetailView({ clientId }: { clientId: string }) {
               <p className="apple-info-sub">{data.client.region || "지역 미입력"}</p>
             </div>
             {!isClient && (
-              <button type="button" onClick={() => setEditModalOpen(true)} style={{
-                padding: "5px 14px", fontSize: 12, fontWeight: 600, borderRadius: 8,
-                border: "1.5px solid hsl(224 76% 40%)", background: "transparent",
-                color: "hsl(224 76% 40%)", cursor: "pointer", transition: "all 0.2s", flexShrink: 0,
-              }}>수정</button>
+              <div style={{ display: "flex", gap: 6, flexShrink: 0 }}>
+                {data.client.auth_user_id && (
+                  <button type="button" onClick={() => { setPwModalOpen(true); setPwValue(""); setPwConfirm(""); setPwError(null); setPwSuccess(false); }} style={{
+                    padding: "5px 14px", fontSize: 12, fontWeight: 600, borderRadius: 8,
+                    border: "1.5px solid hsl(0 70% 50%)", background: "transparent",
+                    color: "hsl(0 70% 50%)", cursor: "pointer", transition: "all 0.2s",
+                  }}>비밀번호 재설정</button>
+                )}
+                <button type="button" onClick={() => setEditModalOpen(true)} style={{
+                  padding: "5px 14px", fontSize: 12, fontWeight: 600, borderRadius: 8,
+                  border: "1.5px solid hsl(224 76% 40%)", background: "transparent",
+                  color: "hsl(224 76% 40%)", cursor: "pointer", transition: "all 0.2s",
+                }}>수정</button>
+              </div>
             )}
           </div>
           <div style={{ display: "flex", gap: 20 }}>
@@ -972,6 +1006,72 @@ export function ClientDetailView({ clientId }: { clientId: string }) {
               onSave={updateClient}
               onClose={() => setEditModalOpen(false)}
             />
+          )}
+
+          {pwModalOpen && createPortal(
+            <div onClick={() => setPwModalOpen(false)} style={{
+              position: "fixed", inset: 0, zIndex: 99999,
+              background: "rgba(0,0,0,0.4)", backdropFilter: "blur(4px)",
+              display: "flex", alignItems: "center", justifyContent: "center",
+            }}>
+              <div onClick={(e) => e.stopPropagation()} style={{
+                background: "#fff", borderRadius: 16, padding: 28, width: 400, maxWidth: "92vw",
+                boxShadow: "0 20px 60px rgba(0,0,0,0.15)",
+              }}>
+                <h2 style={{ fontSize: 18, fontWeight: 800, color: "hsl(222 47% 11%)", margin: "0 0 6px" }}>비밀번호 재설정</h2>
+                <p style={{ fontSize: 13, color: "hsl(215 16% 52%)", margin: "0 0 20px" }}>{data.client.contact_email}</p>
+
+                {pwSuccess ? (
+                  <p style={{ color: "hsl(142 70% 40%)", fontWeight: 700, fontSize: 14, textAlign: "center", padding: "20px 0" }}>비밀번호가 변경되었습니다.</p>
+                ) : (
+                  <>
+                    <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+                      <div>
+                        <p style={{ fontSize: 12, fontWeight: 600, color: "hsl(222 47% 11%)", marginBottom: 4 }}>새 비밀번호</p>
+                        <input
+                          type="password"
+                          value={pwValue}
+                          onChange={(e) => setPwValue(e.target.value)}
+                          placeholder="8자 이상"
+                          style={{
+                            width: "100%", padding: "10px 14px", fontSize: 14,
+                            border: "1px solid hsl(214 32% 91%)", borderRadius: 10,
+                            background: "hsl(210 40% 98%)", color: "hsl(222 47% 11%)", outline: "none",
+                          }}
+                        />
+                      </div>
+                      <div>
+                        <p style={{ fontSize: 12, fontWeight: 600, color: "hsl(222 47% 11%)", marginBottom: 4 }}>비밀번호 확인</p>
+                        <input
+                          type="password"
+                          value={pwConfirm}
+                          onChange={(e) => setPwConfirm(e.target.value)}
+                          placeholder="비밀번호 재입력"
+                          style={{
+                            width: "100%", padding: "10px 14px", fontSize: 14,
+                            border: "1px solid hsl(214 32% 91%)", borderRadius: 10,
+                            background: "hsl(210 40% 98%)", color: "hsl(222 47% 11%)", outline: "none",
+                          }}
+                        />
+                      </div>
+                    </div>
+                    {pwError && <p style={{ marginTop: 10, color: "#e94560", fontSize: 13 }}>{pwError}</p>}
+                    <div style={{ display: "flex", gap: 10, justifyContent: "flex-end", marginTop: 20 }}>
+                      <button type="button" onClick={() => setPwModalOpen(false)} style={{
+                        padding: "8px 18px", fontSize: 13, borderRadius: 10, cursor: "pointer",
+                        border: "1px solid hsl(214 32% 91%)", background: "#fff", color: "hsl(215 16% 47%)",
+                      }}>취소</button>
+                      <button type="button" onClick={() => void handleResetPassword()} disabled={pwSaving} style={{
+                        padding: "8px 22px", fontSize: 13, fontWeight: 700, borderRadius: 10, cursor: "pointer",
+                        border: "none", background: "hsl(0 70% 50%)", color: "#fff",
+                        opacity: pwSaving ? 0.5 : 1,
+                      }}>{pwSaving ? "변경 중..." : "비밀번호 변경"}</button>
+                    </div>
+                  </>
+                )}
+              </div>
+            </div>,
+            document.body,
           )}
         </div>
       </section>
