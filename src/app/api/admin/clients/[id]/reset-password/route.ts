@@ -24,12 +24,12 @@ export async function POST(request: Request, context: RouteContext) {
 
   const { data: client, error: clientError } = await adminClient
     .from("clients")
-    .select("auth_user_id")
+    .select("auth_user_id, contact_email")
     .eq("id", clientId)
     .single();
 
-  if (clientError || !client?.auth_user_id) {
-    return NextResponse.json({ error: "연결된 로그인 계정이 없습니다." }, { status: 400 });
+  if (clientError || !client) {
+    return NextResponse.json({ error: "고객 정보를 불러올 수 없습니다." }, { status: 400 });
   }
 
   const body = await request.json() as { password?: string };
@@ -39,9 +39,48 @@ export async function POST(request: Request, context: RouteContext) {
     return NextResponse.json({ error: "비밀번호는 8자 이상이어야 합니다." }, { status: 400 });
   }
 
+  const email = client.contact_email?.trim();
+
+  // If no auth user linked, create one
+  if (!client.auth_user_id) {
+    if (!email) {
+      return NextResponse.json({ error: "고객 이메일이 등록되어 있지 않습니다." }, { status: 400 });
+    }
+
+    const { data: newUser, error: createError } = await adminClient.auth.admin.createUser({
+      email,
+      password,
+      email_confirm: true,
+      user_metadata: { role: "client" },
+    });
+
+    if (createError) {
+      return NextResponse.json({ error: `계정 생성 실패: ${createError.message}` }, { status: 500 });
+    }
+
+    // Link auth user to client
+    await adminClient
+      .from("clients")
+      .update({ auth_user_id: newUser.user.id })
+      .eq("id", clientId);
+
+    return NextResponse.json({ success: true, created: true });
+  }
+
+  // Auth user exists — update password, sync email, and ensure confirmed
+  const updatePayload: Record<string, unknown> = {
+    password,
+    email_confirm: true,
+  };
+
+  // Sync email if client's contact_email differs from auth user's email
+  if (email) {
+    updatePayload.email = email;
+  }
+
   const { error: updateError } = await adminClient.auth.admin.updateUserById(
     client.auth_user_id,
-    { password },
+    updatePayload,
   );
 
   if (updateError) {

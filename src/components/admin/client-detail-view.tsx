@@ -1029,12 +1029,12 @@ export function ClientDetailView({ clientId }: { clientId: string }) {
             </div>
             {!isClient && (
               <div style={{ display: "flex", gap: 6, flexShrink: 0 }}>
-                {data.client.auth_user_id && (
+                {data.client.contact_email && (
                   <button type="button" onClick={() => { setPwModalOpen(true); setPwValue(""); setPwConfirm(""); setPwError(null); setPwSuccess(false); }} style={{
                     padding: "5px 14px", fontSize: 12, fontWeight: 600, borderRadius: 8,
                     border: "1.5px solid hsl(0 70% 50%)", background: "transparent",
                     color: "hsl(0 70% 50%)", cursor: "pointer", transition: "all 0.2s",
-                  }}>비밀번호 재설정</button>
+                  }}>{data.client.auth_user_id ? "비밀번호 재설정" : "계정 생성"}</button>
                 )}
                 <button type="button" onClick={() => setEditModalOpen(true)} style={{
                   padding: "5px 14px", fontSize: 12, fontWeight: 600, borderRadius: 8,
