@@ -632,7 +632,7 @@ export function DashboardCanvas({ client, nodes, logs }: Props) {
         {/* ── Overview ── */}
         <div style={{ display: "flex", alignItems: "center", gap: 14, flexWrap: "wrap", padding: "12px 16px", background: "var(--card-alpha)", border: "1px solid var(--border)", borderRadius: 12 }}>
           <img
-            src="/client-logo.jpeg"
+            src={client.logo_url || "/client-logo.jpeg"}
             alt={`${client.name} 로고`}
             style={{
               width: 44,
