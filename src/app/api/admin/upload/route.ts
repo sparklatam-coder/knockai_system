@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { getAdminRequestContext, resolveClientId } from "@/lib/api-auth";
+import { getSafeImageExtension } from "@/lib/security";
 
 export async function POST(request: Request) {
   const adminContext = await getAdminRequestContext(request.headers.get("authorization"));
@@ -30,7 +31,10 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "파일 크기는 5MB 이하만 가능합니다." }, { status: 400 });
   }
 
-  const ext = file.name.split(".").pop() ?? "png";
+  const ext = getSafeImageExtension(file.name);
+  if (!ext) {
+    return NextResponse.json({ error: "허용되지 않는 파일 형식입니다. (jpg, png, gif, webp만 가능)" }, { status: 400 });
+  }
   const fileName = `${resolvedClientId}/${Date.now()}_${Math.random().toString(36).slice(2, 8)}.${ext}`;
 
   const arrayBuffer = await file.arrayBuffer();
@@ -45,7 +49,8 @@ export async function POST(request: Request) {
     });
 
   if (uploadError) {
-    return NextResponse.json({ error: uploadError.message }, { status: 500 });
+    console.error("[upload]", uploadError.message);
+    return NextResponse.json({ error: "파일 업로드에 실패했습니다." }, { status: 500 });
   }
 
   const { data: urlData } = adminClient.storage

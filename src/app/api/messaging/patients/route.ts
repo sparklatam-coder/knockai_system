@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { getAdminRequestContext, resolveClientId } from "@/lib/api-auth";
+import { sanitizeCsvCell, safeDbError } from "@/lib/security";
 
 // GET /api/messaging/patients?client_id=xxx
 export async function GET(request: Request) {
@@ -22,7 +23,7 @@ export async function GET(request: Request) {
     .eq("client_id", clientId)
     .order("last_visit", { ascending: false, nullsFirst: false });
 
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+  if (error) return NextResponse.json({ error: safeDbError(error, "patients GET") }, { status: 500 });
   return NextResponse.json({ data });
 }
 
@@ -71,7 +72,7 @@ export async function POST(request: Request) {
       .upsert(patients, { onConflict: "client_id,phone" })
       .select("*");
 
-    if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+    if (error) return NextResponse.json({ error: safeDbError(error, "patients CSV") }, { status: 500 });
     return NextResponse.json({ data, count: data?.length ?? 0 }, { status: 201 });
   }
 
@@ -101,7 +102,7 @@ export async function POST(request: Request) {
     .select("*")
     .single();
 
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+  if (error) return NextResponse.json({ error: safeDbError(error, "patients POST") }, { status: 500 });
   return NextResponse.json({ data }, { status: 201 });
 }
 
@@ -132,7 +133,7 @@ function parseCSV(text: string): { name: string; phone: string; last_visit: stri
   if (nameIdx === -1 || phoneIdx === -1) return [];
 
   return lines.slice(1).map((line) => {
-    const cols = line.split(",").map((c) => c.trim());
+    const cols = line.split(",").map((c) => sanitizeCsvCell(c.trim()));
     return {
       name: cols[nameIdx] ?? "",
       phone: cols[phoneIdx] ?? "",

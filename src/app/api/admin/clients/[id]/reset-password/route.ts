@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { getAdminRequestContext, resolveClientId } from "@/lib/api-auth";
 import { createRateLimiter } from "@/lib/rate-limit";
+import { validatePassword } from "@/lib/security";
 
 // 15분에 최대 5회 비밀번호 재설정
 const resetLimiter = createRateLimiter({ windowMs: 15 * 60_000, max: 5 });
@@ -42,8 +43,9 @@ export async function POST(request: Request, context: RouteContext) {
   const body = await request.json() as { password?: string };
   const password = typeof body.password === "string" ? body.password.trim() : "";
 
-  if (password.length < 8) {
-    return NextResponse.json({ error: "비밀번호는 8자 이상이어야 합니다." }, { status: 400 });
+  const passwordError = validatePassword(password);
+  if (passwordError) {
+    return NextResponse.json({ error: passwordError }, { status: 400 });
   }
 
   const email = client.contact_email?.trim();

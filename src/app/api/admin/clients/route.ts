@@ -7,6 +7,7 @@ import type {
   NodeRecord,
 } from "@/lib/types";
 import { getAdminRequestContext } from "@/lib/api-auth";
+import { getSafeImageExtension } from "@/lib/security";
 
 type RawClientInput = Partial<ClientCreateInput> & {
   package_tier?: string;
@@ -177,7 +178,10 @@ export async function POST(request: Request) {
   let logoUrl: string | null = null;
 
   if (logoFile) {
-    const ext = logoFile.name.split(".").pop() ?? "png";
+    const ext = getSafeImageExtension(logoFile.name);
+    if (!ext) {
+      return badRequest("허용되지 않는 파일 형식입니다. (jpg, png, gif, webp만 가능)");
+    }
     const fileName = `${Date.now()}_${Math.random().toString(36).slice(2, 8)}.${ext}`;
     const arrayBuffer = await logoFile.arrayBuffer();
 

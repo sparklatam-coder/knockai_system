@@ -26,7 +26,7 @@ export async function GET(request: Request) {
     .eq("client_id", clientId)
     .order("created_at", { ascending: false });
 
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+  if (error) { console.error("[templates]", error.message); return NextResponse.json({ error: "서버 오류가 발생했습니다." }, { status: 500 }); }
   return NextResponse.json({ data });
 }
 
@@ -67,7 +67,7 @@ export async function POST(request: Request) {
     .select("*")
     .single();
 
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+  if (error) { console.error("[templates]", error.message); return NextResponse.json({ error: "서버 오류가 발생했습니다." }, { status: 500 }); }
   return NextResponse.json({ data }, { status: 201 });
 }
 
@@ -107,6 +107,6 @@ export async function PATCH(request: Request) {
     .eq("id", id)
     .eq("client_id", clientId);
 
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+  if (error) { console.error("[templates]", error.message); return NextResponse.json({ error: "서버 오류가 발생했습니다." }, { status: 500 }); }
   return NextResponse.json({ success: true });
 }

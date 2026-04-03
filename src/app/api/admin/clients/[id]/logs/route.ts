@@ -45,7 +45,7 @@ export async function PATCH(request: Request, context: RouteContext) {
     .select("*")
     .single();
 
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+  if (error) { console.error("[logs]", error.message); return NextResponse.json({ error: "서버 오류가 발생했습니다." }, { status: 500 }); }
   return NextResponse.json({ data });
 }
 
@@ -73,7 +73,7 @@ export async function DELETE(request: Request, context: RouteContext) {
     .eq("id", payload.log_id)
     .eq("client_id", id);
 
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+  if (error) { console.error("[logs]", error.message); return NextResponse.json({ error: "서버 오류가 발생했습니다." }, { status: 500 }); }
   return NextResponse.json({ ok: true });
 }
 
@@ -122,7 +122,7 @@ export async function POST(request: Request, context: RouteContext) {
     .single();
 
   if (error) {
-    return NextResponse.json({ error: error.message }, { status: 500 });
+    console.error("[logs]", error.message); return NextResponse.json({ error: "서버 오류가 발생했습니다." }, { status: 500 });
   }
 
   return NextResponse.json({ data }, { status: 201 });

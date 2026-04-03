@@ -22,8 +22,16 @@ export function SetPasswordForm() {
     e.preventDefault();
     setError(null);
 
-    if (password.length < 8) {
-      setError("비밀번호는 8자 이상이어야 합니다.");
+    if (password.length < 10) {
+      setError("비밀번호는 10자 이상이어야 합니다.");
+      return;
+    }
+    if (!/[A-Za-z]/.test(password)) {
+      setError("비밀번호에 영문자가 포함되어야 합니다.");
+      return;
+    }
+    if (!/[0-9]/.test(password)) {
+      setError("비밀번호에 숫자가 포함되어야 합니다.");
       return;
     }
 
@@ -93,7 +101,7 @@ export function SetPasswordForm() {
             autoComplete="new-password"
             minLength={8}
             onChange={(e) => setPassword(e.target.value)}
-            placeholder="8자 이상"
+            placeholder="영문+숫자 포함 10자 이상"
             type="password"
             value={password}
           />

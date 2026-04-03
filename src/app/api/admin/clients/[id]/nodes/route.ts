@@ -67,14 +67,14 @@ export async function PATCH(request: Request, context: RouteContext) {
       .single();
 
     if (error) {
-      return NextResponse.json({ error: error.message }, { status: 500 });
+      console.error("[nodes]", error.message); return NextResponse.json({ error: "서버 오류가 발생했습니다." }, { status: 500 });
     }
 
     return NextResponse.json({ data });
   }
 
   if (payload.kind === "guide_update") {
-    if (user.user_metadata?.role !== "super_admin") {
+    if (user.app_metadata?.role !== "super_admin") {
       return NextResponse.json({ error: "가이드 수정은 슈퍼관리자만 가능합니다." }, { status: 403 });
     }
 
@@ -109,7 +109,7 @@ export async function PATCH(request: Request, context: RouteContext) {
     .single();
 
   if (error) {
-    return NextResponse.json({ error: error.message }, { status: 500 });
+    console.error("[nodes]", error.message); return NextResponse.json({ error: "서버 오류가 발생했습니다." }, { status: 500 });
   }
 
   return NextResponse.json({ data });
