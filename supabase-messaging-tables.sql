@@ -76,19 +76,23 @@ ALTER TABLE messaging_logs ENABLE ROW LEVEL SECURITY;
 -- service_role은 항상 접근 가능 (API routes에서 adminClient 사용)
 -- client는 자기 client_id 레코드만 읽기
 
-CREATE POLICY "service_role_all" ON messaging_patients FOR ALL USING (true) WITH CHECK (true);
+CREATE POLICY "service_role_all" ON messaging_patients
+  FOR ALL TO service_role USING (true) WITH CHECK (true);
 CREATE POLICY "clients_read_own_patients" ON messaging_patients
   FOR SELECT USING (client_id = (SELECT id FROM clients WHERE auth_user_id = auth.uid()));
 
-CREATE POLICY "service_role_all" ON messaging_templates FOR ALL USING (true) WITH CHECK (true);
+CREATE POLICY "service_role_all" ON messaging_templates
+  FOR ALL TO service_role USING (true) WITH CHECK (true);
 CREATE POLICY "clients_read_own_templates" ON messaging_templates
   FOR SELECT USING (client_id = (SELECT id FROM clients WHERE auth_user_id = auth.uid()));
 
-CREATE POLICY "service_role_all" ON messaging_campaigns FOR ALL USING (true) WITH CHECK (true);
+CREATE POLICY "service_role_all" ON messaging_campaigns
+  FOR ALL TO service_role USING (true) WITH CHECK (true);
 CREATE POLICY "clients_read_own_campaigns" ON messaging_campaigns
   FOR SELECT USING (client_id = (SELECT id FROM clients WHERE auth_user_id = auth.uid()));
 
-CREATE POLICY "service_role_all" ON messaging_logs FOR ALL USING (true) WITH CHECK (true);
+CREATE POLICY "service_role_all" ON messaging_logs
+  FOR ALL TO service_role USING (true) WITH CHECK (true);
 CREATE POLICY "clients_read_own_logs" ON messaging_logs
   FOR SELECT USING (client_id = (SELECT id FROM clients WHERE auth_user_id = auth.uid()));
 

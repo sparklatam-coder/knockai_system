@@ -1,9 +1,16 @@
 import { NextResponse } from "next/server";
-import { getAdminRequestContext } from "@/lib/api-auth";
+import { getAdminRequestContext, resolveClientId } from "@/lib/api-auth";
+import { createRateLimiter } from "@/lib/rate-limit";
+
+// 1분에 최대 10건 발송 요청
+const sendLimiter = createRateLimiter({ windowMs: 60_000, max: 10 });
 
 // POST /api/messaging/send
 // 솔라피 API를 통한 메시지 발송
 export async function POST(request: Request) {
+  const limited = sendLimiter.check(request, "messaging-send");
+  if (limited) return limited;
+
   const adminContext = await getAdminRequestContext(request.headers.get("authorization"));
   if ("error" in adminContext) {
     return NextResponse.json({ error: adminContext.error }, { status: adminContext.status });
@@ -24,11 +31,20 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "수신자가 없습니다." }, { status: 400 });
   }
 
+  if (!body.client_id) {
+    return NextResponse.json({ error: "client_id 필수" }, { status: 400 });
+  }
+
+  const clientId = await resolveClientId(adminClient, body.client_id);
+  if (!clientId) {
+    return NextResponse.json({ error: "고객을 찾을 수 없습니다." }, { status: 404 });
+  }
+
   // 병원별 솔라피 설정 조회
   const { data: client } = await adminClient
     .from("clients")
     .select("solapi_pfid, solapi_sender_number")
-    .eq("id", body.client_id)
+    .eq("id", clientId)
     .single();
 
   const apiKey = process.env.SOLAPI_API_KEY;
@@ -108,12 +124,12 @@ export async function POST(request: Request) {
 
   // Record logs in DB
   const logs = body.recipients.map((r) => ({
-    client_id: body.client_id,
+    client_id: clientId,
     campaign_id: body.campaign_id || null,
     patient_id: r.patient_id,
     type: body.type,
     template_name: body.template_name || null,
-    status: "success" as const, // Will be updated by webhook/polling
+    status: "pending" as const, // Will be updated by webhook/polling
     sent_at: new Date().toISOString(),
   }));
 
@@ -138,9 +154,10 @@ export async function POST(request: Request) {
     }
   }
 
+  const hasError = solapiResult.error || solapiResult.errorCode;
+
   return NextResponse.json({
-    success: true,
+    success: !hasError,
     sent: body.recipients.length,
-    solapi: solapiResult,
   });
 }

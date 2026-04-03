@@ -12,7 +12,9 @@ export async function GET(request: NextRequest) {
     | "recovery"
     | "email_change"
     | undefined;
-  const next = searchParams.get("next") ?? "/auth/set-password";
+  const rawNext = searchParams.get("next") ?? "/auth/set-password";
+  // Prevent open redirect: only allow relative paths, not absolute URLs or protocol-relative
+  const next = rawNext.startsWith("/") && !rawNext.startsWith("//") ? rawNext : "/auth/set-password";
 
   if (!code && !tokenHash) {
     return NextResponse.redirect(new URL("/login?error=missing_code", origin));

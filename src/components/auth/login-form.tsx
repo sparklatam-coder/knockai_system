@@ -26,7 +26,9 @@ export function LoginForm() {
       return;
     }
 
-    const redirectTo = searchParams.get("redirectTo") ?? "/admin/clients";
+    const rawRedirect = searchParams.get("redirectTo") ?? "/admin/clients";
+    // Prevent open redirect: only allow relative paths
+    const redirectTo = rawRedirect.startsWith("/") && !rawRedirect.startsWith("//") ? rawRedirect : "/admin/clients";
     window.location.href = redirectTo;
   }
 

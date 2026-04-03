@@ -2,7 +2,7 @@ import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
 import { supabaseAnonKey, supabaseUrl } from "./src/lib/env";
 
-const protectedPaths = ["/admin", "/dashboard", "/map"];
+const protectedPaths = ["/admin", "/dashboard", "/map", "/api/admin", "/api/messaging"];
 
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
@@ -11,8 +11,15 @@ export async function middleware(request: NextRequest) {
     return NextResponse.next();
   }
 
+  // API routes handle their own auth via getAdminRequestContext; middleware is defense-in-depth
+  const isApiRoute = pathname.startsWith("/api/");
+
   if (!supabaseUrl || !supabaseAnonKey) {
-    return NextResponse.next();
+    // Fail closed: do not allow access when auth infrastructure is unavailable
+    if (isApiRoute) {
+      return NextResponse.json({ error: "Service unavailable" }, { status: 503 });
+    }
+    return NextResponse.redirect(new URL("/login?error=service_unavailable", request.url));
   }
 
   const response = NextResponse.next({
@@ -40,12 +47,15 @@ export async function middleware(request: NextRequest) {
   } = await supabase.auth.getUser();
 
   if (!user) {
+    if (isApiRoute) {
+      return NextResponse.json({ error: "인증이 필요합니다." }, { status: 401 });
+    }
     const loginUrl = new URL("/login", request.url);
     loginUrl.searchParams.set("redirectTo", pathname);
     return NextResponse.redirect(loginUrl);
   }
 
-  const userRole = user.user_metadata?.role;
+  const userRole = user.app_metadata?.role;
   if (pathname.startsWith("/admin") && userRole !== "admin" && userRole !== "super_admin") {
     return NextResponse.redirect(new URL("/dashboard", request.url));
   }
@@ -58,5 +68,5 @@ export async function middleware(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ["/admin/:path*", "/dashboard/:path*", "/map/:path*"],
+  matcher: ["/admin/:path*", "/dashboard/:path*", "/map/:path*", "/api/admin/:path*", "/api/messaging/:path*"],
 };

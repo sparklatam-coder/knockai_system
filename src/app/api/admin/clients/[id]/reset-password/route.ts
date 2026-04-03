@@ -1,11 +1,18 @@
 import { NextResponse } from "next/server";
 import { getAdminRequestContext, resolveClientId } from "@/lib/api-auth";
+import { createRateLimiter } from "@/lib/rate-limit";
+
+// 15분에 최대 5회 비밀번호 재설정
+const resetLimiter = createRateLimiter({ windowMs: 15 * 60_000, max: 5 });
 
 interface RouteContext {
   params: Promise<{ id: string }>;
 }
 
 export async function POST(request: Request, context: RouteContext) {
+  const limited = resetLimiter.check(request, "reset-password");
+  if (limited) return limited;
+
   const adminContext = await getAdminRequestContext(
     request.headers.get("authorization"),
   );

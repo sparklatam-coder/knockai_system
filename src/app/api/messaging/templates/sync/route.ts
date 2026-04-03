@@ -67,14 +67,14 @@ export async function POST(request: Request) {
     (t) => !pfId || (t as unknown as Record<string, unknown>).pfId === pfId || (t as unknown as Record<string, unknown>).channelId === pfId,
   );
 
-  // 템플릿을 못 가져온 경우 디버깅용 rawResponse 반환
+  // 템플릿을 못 가져온 경우
   if (solapiTemplates.length === 0) {
+    console.warn("[template-sync] No templates found for pfId:", client.solapi_pfid, "raw:", rawResponse);
     return NextResponse.json({
       success: true,
       total: 0,
       synced: 0,
       created: 0,
-      debug: { pfId: client.solapi_pfid, rawResponse },
     });
   }
 

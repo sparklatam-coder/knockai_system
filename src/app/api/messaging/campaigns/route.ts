@@ -82,6 +82,11 @@ export async function PATCH(request: Request) {
   const id = typeof body.id === "string" ? body.id : "";
   if (!id) return NextResponse.json({ error: "id 필수" }, { status: 400 });
 
+  const rawClientId = typeof body.client_id === "string" ? body.client_id : "";
+  if (!rawClientId) return NextResponse.json({ error: "client_id 필수" }, { status: 400 });
+  const clientId = await resolveClientId(adminClient, rawClientId);
+  if (!clientId) return NextResponse.json({ error: "고객을 찾을 수 없습니다." }, { status: 404 });
+
   const updates: Record<string, unknown> = {};
   if (typeof body.name === "string") updates.name = body.name.trim();
   if (typeof body.type === "string" && VALID_TYPES.includes(body.type as MsgType)) updates.type = body.type;
@@ -99,7 +104,8 @@ export async function PATCH(request: Request) {
   const { error } = await adminClient
     .from("messaging_campaigns")
     .update(updates)
-    .eq("id", id);
+    .eq("id", id)
+    .eq("client_id", clientId);
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
   return NextResponse.json({ success: true });
@@ -113,13 +119,18 @@ export async function DELETE(request: Request) {
   }
 
   const { adminClient } = adminContext;
-  const body = await request.json() as { id?: string };
+  const body = await request.json() as { id?: string; client_id?: string };
   if (!body.id) return NextResponse.json({ error: "id 필수" }, { status: 400 });
+  if (!body.client_id) return NextResponse.json({ error: "client_id 필수" }, { status: 400 });
+
+  const clientId = await resolveClientId(adminClient, body.client_id);
+  if (!clientId) return NextResponse.json({ error: "고객을 찾을 수 없습니다." }, { status: 404 });
 
   const { error } = await adminClient
     .from("messaging_campaigns")
     .delete()
-    .eq("id", body.id);
+    .eq("id", body.id)
+    .eq("client_id", clientId);
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
   return NextResponse.json({ success: true });

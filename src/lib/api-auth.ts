@@ -44,7 +44,7 @@ export async function getAdminRequestContext(
     };
   }
 
-  const role = data.user.user_metadata?.role;
+  const role = data.user.app_metadata?.role;
   if (role !== "admin" && role !== "super_admin") {
     return {
       error: "관리자 권한이 필요합니다.",

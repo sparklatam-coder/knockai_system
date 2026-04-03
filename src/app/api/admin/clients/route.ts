@@ -157,9 +157,6 @@ export async function POST(request: Request) {
   if (input.login_email) {
     const siteOrigin = request.headers.get("origin") ?? process.env.NEXT_PUBLIC_SITE_URL ?? "";
     const inviteResult = await adminClient.auth.admin.inviteUserByEmail(input.login_email, {
-      data: {
-        role: "client",
-      },
       redirectTo: `${siteOrigin}/auth/callback`,
     });
 
@@ -168,6 +165,13 @@ export async function POST(request: Request) {
     }
 
     authUserId = inviteResult.data.user?.id ?? null;
+
+    // Set role in app_metadata (not user_metadata, which is user-editable)
+    if (authUserId) {
+      await adminClient.auth.admin.updateUserById(authUserId, {
+        app_metadata: { role: "client" },
+      });
+    }
   }
 
   let logoUrl: string | null = null;
