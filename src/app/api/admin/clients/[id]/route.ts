@@ -163,3 +163,51 @@ export async function PATCH(request: Request, context: RouteContext) {
 
   return NextResponse.json({ success: true });
 }
+
+export async function DELETE(request: Request, context: RouteContext) {
+  const adminContext = await getAdminRequestContext(
+    request.headers.get("authorization"),
+  );
+
+  if ("error" in adminContext) {
+    return NextResponse.json({ error: adminContext.error }, { status: adminContext.status });
+  }
+
+  const { id: rawId } = await context.params;
+  const { adminClient, user } = adminContext;
+
+  // super_admin만 삭제 가능
+  if (user.app_metadata?.role !== "super_admin") {
+    return NextResponse.json({ error: "병원 삭제는 최고 관리자만 가능합니다." }, { status: 403 });
+  }
+
+  const clientId = await resolveClientId(adminClient, rawId);
+  if (!clientId) {
+    return NextResponse.json({ error: "고객을 찾을 수 없습니다." }, { status: 404 });
+  }
+
+  // 연결된 auth user 조회 (삭제 시 auth user도 정리)
+  const { data: client } = await adminClient
+    .from("clients")
+    .select("auth_user_id, name")
+    .eq("id", clientId)
+    .single();
+
+  // CASCADE로 관련 데이터 자동 삭제 (nodes, sub_nodes, activity_logs, messaging_*)
+  const { error } = await adminClient
+    .from("clients")
+    .delete()
+    .eq("id", clientId);
+
+  if (error) {
+    console.error("[client delete]", error.message);
+    return NextResponse.json({ error: "서버 오류가 발생했습니다." }, { status: 500 });
+  }
+
+  // 연결된 auth user도 삭제
+  if (client?.auth_user_id) {
+    await adminClient.auth.admin.deleteUser(client.auth_user_id);
+  }
+
+  return NextResponse.json({ success: true, deleted: client?.name });
+}

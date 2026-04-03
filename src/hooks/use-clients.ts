@@ -15,6 +15,7 @@ interface UseClientsResult {
   error: string | null;
   creating: boolean;
   createClient: (options: CreateClientOptions) => Promise<{ error: string | null }>;
+  deleteClient: (clientId: string) => Promise<{ error: string | null }>;
   refresh: () => Promise<void>;
 }
 
@@ -122,6 +123,31 @@ export function useClients(): UseClientsResult {
     [accessToken, refresh],
   );
 
+  const deleteClient = useCallback(
+    async (clientId: string) => {
+      if (!accessToken) {
+        return { error: "세션이 없습니다." };
+      }
+
+      const response = await fetch(`/api/admin/clients/${clientId}`, {
+        method: "DELETE",
+        headers: {
+          Authorization: `Bearer ${accessToken}`,
+        },
+      });
+
+      const result = await parseApiResponse<{ success: boolean }>(response);
+
+      if (result.error) {
+        return { error: result.error };
+      }
+
+      await refresh();
+      return { error: null };
+    },
+    [accessToken, refresh],
+  );
+
   return useMemo(
     () => ({
       clients,
@@ -129,8 +155,9 @@ export function useClients(): UseClientsResult {
       error,
       creating,
       createClient,
+      deleteClient,
       refresh,
     }),
-    [clients, createClient, creating, error, loading, refresh],
+    [clients, createClient, creating, deleteClient, error, loading, refresh],
   );
 }

@@ -3,6 +3,7 @@
 import { useCallback, useMemo, useRef, useState } from "react";
 import { ClientCard } from "@/components/admin/client-card";
 import { useClients } from "@/hooks/use-clients";
+import { useAuth } from "@/hooks/use-auth";
 import type { ClientCreateInput, PackageTier } from "@/lib/types";
 
 const INITIAL: ClientCreateInput = {
@@ -21,7 +22,7 @@ const TIERS: { value: string; label: string }[] = [
 ];
 
 export function AdminClientsView() {
-  const { clients, loading, error, creating, createClient } = useClients();
+  const { clients, loading, error, creating, createClient, deleteClient } = useClients();
   const [search,       setSearch]       = useState("");
   const [selectedTier, setSelectedTier] = useState("all");
   const [showModal,    setShowModal]    = useState(false);
@@ -29,7 +30,24 @@ export function AdminClientsView() {
   const [logo,         setLogo]         = useState<File | null>(null);
   const [logoPreview,  setLogoPreview]  = useState<string | null>(null);
   const [formMsg,      setFormMsg]      = useState<string | null>(null);
+  const [deleteTarget, setDeleteTarget] = useState<{ id: string; name: string } | null>(null);
+  const [deleteConfirm, setDeleteConfirm] = useState("");
+  const [deleting,     setDeleting]     = useState(false);
   const logoInputRef = useRef<HTMLInputElement>(null);
+  const { role } = useAuth();
+  const isSuperAdmin = role === "super_admin";
+
+  const handleDelete = useCallback(async () => {
+    if (!deleteTarget || deleteConfirm !== deleteTarget.name) return;
+    setDeleting(true);
+    const result = await deleteClient(deleteTarget.id);
+    setDeleting(false);
+    if (result.error) {
+      alert(`삭제 실패: ${result.error}`);
+    }
+    setDeleteTarget(null);
+    setDeleteConfirm("");
+  }, [deleteTarget, deleteConfirm, deleteClient]);
 
   const filtered = useMemo(() => clients.filter((c) => {
     const q = search.toLowerCase();
@@ -133,7 +151,106 @@ export function AdminClientsView() {
         <div className="state-card">조건에 맞는 고객이 없습니다.</div>
       ) : (
         <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(300px, 1fr))", gap: 14 }}>
-          {filtered.map((c) => <ClientCard key={c.id} client={c} />)}
+          {filtered.map((c) => (
+            <div key={c.id} style={{ position: "relative" }}>
+              <ClientCard client={c} />
+              {isSuperAdmin && (
+                <button
+                  type="button"
+                  onClick={(e) => { e.preventDefault(); setDeleteTarget({ id: c.id, name: c.name }); }}
+                  title="병원 삭제"
+                  style={{
+                    position: "absolute", top: 12, right: 12, zIndex: 2,
+                    width: 28, height: 28, borderRadius: 8,
+                    background: "var(--overlay-3)", border: "1px solid var(--border)",
+                    color: "var(--tdim)", cursor: "pointer", fontSize: 14,
+                    display: "flex", alignItems: "center", justifyContent: "center",
+                    transition: "all 0.15s",
+                  }}
+                  onMouseEnter={(e) => {
+                    (e.currentTarget as HTMLElement).style.background = "var(--error-soft, #ff3b3020)";
+                    (e.currentTarget as HTMLElement).style.color = "var(--error, #ff3b30)";
+                    (e.currentTarget as HTMLElement).style.borderColor = "var(--error, #ff3b30)";
+                  }}
+                  onMouseLeave={(e) => {
+                    (e.currentTarget as HTMLElement).style.background = "var(--overlay-3)";
+                    (e.currentTarget as HTMLElement).style.color = "var(--tdim)";
+                    (e.currentTarget as HTMLElement).style.borderColor = "var(--border)";
+                  }}
+                >
+                  ✕
+                </button>
+              )}
+            </div>
+          ))}
+        </div>
+      )}
+
+      {/* ── Delete confirmation modal ── */}
+      {deleteTarget && (
+        <div
+          className="popup-overlay show"
+          onClick={() => { setDeleteTarget(null); setDeleteConfirm(""); }}
+        >
+          <div
+            className="popup"
+            onClick={(e) => e.stopPropagation()}
+            style={{ maxWidth: 440, width: "92%" }}
+          >
+            <button className="popup-close" type="button" onClick={() => { setDeleteTarget(null); setDeleteConfirm(""); }}>✕</button>
+
+            <h3 style={{ fontSize: 20, fontWeight: 900, marginBottom: 8, color: "var(--error, #ff3b30)" }}>
+              병원 삭제
+            </h3>
+            <p style={{ fontSize: 14, color: "var(--tsub)", marginBottom: 16, lineHeight: 1.6 }}>
+              <strong>{deleteTarget.name}</strong>을(를) 삭제하면 모든 노드, 작업 기록, 활동 로그, 메시징 데이터가
+              <strong style={{ color: "var(--error, #ff3b30)" }}> 영구 삭제</strong>됩니다.
+              <br />연결된 로그인 계정도 함께 삭제됩니다.
+            </p>
+            <p style={{ fontSize: 13, color: "var(--tdim)", marginBottom: 8 }}>
+              삭제하려면 병원명을 정확히 입력하세요:
+            </p>
+            <input
+              value={deleteConfirm}
+              onChange={(e) => setDeleteConfirm(e.target.value)}
+              placeholder={deleteTarget.name}
+              style={{
+                width: "100%", minHeight: 40, padding: "9px 12px",
+                background: "var(--overlay-2)", border: "1px solid var(--border)",
+                borderRadius: 10, color: "var(--text)", fontSize: 14, marginBottom: 16,
+              }}
+              autoFocus
+            />
+            <div style={{ display: "flex", gap: 10 }}>
+              <button
+                type="button"
+                onClick={() => { setDeleteTarget(null); setDeleteConfirm(""); }}
+                style={{
+                  flex: 1, minHeight: 42, borderRadius: 10, cursor: "pointer",
+                  background: "var(--overlay-3)", border: "1px solid var(--border)",
+                  color: "var(--text)", fontSize: 14, fontWeight: 600,
+                }}
+              >
+                취소
+              </button>
+              <button
+                type="button"
+                onClick={handleDelete}
+                disabled={deleteConfirm !== deleteTarget.name || deleting}
+                style={{
+                  flex: 1, minHeight: 42, borderRadius: 10, cursor: "pointer",
+                  background: deleteConfirm === deleteTarget.name ? "var(--error, #ff3b30)" : "var(--overlay-3)",
+                  border: "none",
+                  color: deleteConfirm === deleteTarget.name ? "#fff" : "var(--tdim)",
+                  fontSize: 14, fontWeight: 700,
+                  opacity: deleteConfirm !== deleteTarget.name ? 0.5 : 1,
+                  transition: "all 0.2s",
+                }}
+              >
+                {deleting ? "삭제 중…" : "영구 삭제"}
+              </button>
+            </div>
+          </div>
         </div>
       )}
 
