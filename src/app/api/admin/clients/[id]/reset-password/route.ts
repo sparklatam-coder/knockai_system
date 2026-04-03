@@ -58,7 +58,7 @@ export async function POST(request: Request, context: RouteContext) {
       email,
       password,
       email_confirm: true,
-      user_metadata: { role: "client" },
+      app_metadata: { role: "client" },
     });
 
     if (createError) {
